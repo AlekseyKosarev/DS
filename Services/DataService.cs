@@ -74,10 +74,10 @@ namespace DS.Services
 
         public void Dispose() {
             // Освобождаем ресурсы
-            (_cacheStorage as IDisposable)?.Dispose();
+            _cacheStorage?.Dispose();
             (_syncManager as IDisposable)?.Dispose();
-            (_localStorage as IDisposable)?.Dispose();
-            (_remoteStorage as IDisposable)?.Dispose();
+            _localStorage?.Dispose();
+            _remoteStorage?.Dispose();
         }
     }
 }

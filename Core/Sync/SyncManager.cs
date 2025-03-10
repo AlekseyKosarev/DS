@@ -9,9 +9,11 @@ using UnityEngine;
 
 namespace DS.Core.Sync
 {
-    public class SyncManager {
+    public class SyncManager: IDisposable  {
         private readonly ConcurrentDictionary<SyncTarget, AsyncQueue<SyncJob>> _queues = new();
         private readonly ISyncStrategy[] _strategies;
+        private readonly CancellationTokenSource _cts = new(); // Токен для отмены задач
+
 
         public SyncManager(params ISyncStrategy[] strategies) {
             _strategies = strategies;
@@ -27,8 +29,8 @@ namespace DS.Core.Sync
 
         private async UniTaskVoid StartProcessing() {
             var processes = new UniTask[] {
-                ProcessQueueAsync(SyncTarget.Local),
-                ProcessQueueAsync(SyncTarget.Remote)
+                ProcessQueueAsync(SyncTarget.Local, _cts.Token),
+                ProcessQueueAsync(SyncTarget.Remote, _cts.Token)
             };
             await UniTask.WhenAll(processes);
         }
@@ -39,23 +41,32 @@ namespace DS.Core.Sync
 
             while (!token.IsCancellationRequested) {
                 try {
-                    var job = await _queues[target].DequeueAsync(token);
+                    var job = await _queues[target].DequeueAsync(token); // Используем токен отмены
                     var result = await strategy.ExecuteAsync(job);
 
-                    if (!result.IsSuccess) 
-                    {
+                    if (!result.IsSuccess) {
                         Debug.LogError($"Sync failed for target {target}: {result.ErrorMessage}");
-                    } 
-                    else
-                    {
+                    } else {
                         Debug.Log($"Sync succeeded for target {target}.");
                     }
-                } 
-                catch (Exception ex)
-                {
+                } catch (OperationCanceledException) {
+                    Debug.Log($"Processing for target {target} canceled.");
+                    break; // Выходим из цикла при отмене
+                } catch (Exception ex) {
                     Debug.LogError($"Unexpected error in sync process: {ex.Message}");
                 }
             }
+        }
+
+        public void Dispose() {
+            _cts.Cancel(); // Отменяем все задачи
+            _cts.Dispose();
+
+            foreach (var queue in _queues.Values) {
+                (queue as IDisposable)?.Dispose();
+            }
+
+            Debug.Log("SyncManager disposed and resources released.");
         }
     }
 }

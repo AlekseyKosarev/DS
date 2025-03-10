@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace DS.Core.Cache
 {
-    public class MemoryCacheStorage : ICacheStorage, IDisposable {
+    public class MemoryCacheStorage : ICacheStorage {
         private readonly ConcurrentDictionary<string, CacheEntry> _cache = new();
         private readonly AsyncTimer _cleanupTimer;
         private readonly int _maxSize; // Сохраняем maxSize
@@ -86,13 +86,9 @@ namespace DS.Core.Cache
             }
         }
         public void Dispose() {
-            // Отменяем таймер
             _cleanupTimer?.Dispose();
-
-            // Очищаем кэш
             _cache.Clear();
 
-            // Логирование (опционально)
             Debug.Log("MemoryCacheStorage disposed and resources released.");
         }
 

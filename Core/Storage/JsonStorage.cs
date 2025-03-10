@@ -5,6 +5,7 @@ using Cysharp.Threading.Tasks;
 using DS.Core.Interfaces;
 using DS.Models;
 using Newtonsoft.Json;
+using UnityEngine;
 
 namespace _Project.System.DS.Core.Storage
 {
@@ -54,6 +55,11 @@ namespace _Project.System.DS.Core.Storage
             } catch (Exception ex) {
                 return UniTask.FromResult(Result.Failure($"Delete failed: {ex.Message}"));
             }
+        }
+
+        public void Dispose() 
+        {
+            Debug.Log("JsonStorage disposed.");
         }
     }
     

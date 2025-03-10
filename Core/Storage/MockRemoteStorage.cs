@@ -16,5 +16,10 @@ namespace _Project.System.DS.Core.Storage
             Debug.Log("MockRemoteStorage.Download = " + key);
             return UniTask.FromResult(Result<T>.Failure("Data not found."));
         }
+
+        public void Dispose()
+        {
+            Debug.Log("MockRemoteStorage disposed.");
+        }
     }
 }
