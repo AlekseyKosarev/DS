@@ -7,6 +7,13 @@ namespace DS.Core.Storage
 {
     public class RestStorage : IRemoteStorage {
         private readonly HttpClient _httpClient = new HttpClient();
+        private readonly string _apiUrl;
+        private readonly string _authToken;
+        public RestStorage(string apiUrl, string authToken)
+        {
+            _apiUrl = apiUrl;
+            _authToken = authToken;//TODO: Добавить логику
+        }
 
         public void Upload(string key, object data) {
             var json = JsonConvert.SerializeObject(data);

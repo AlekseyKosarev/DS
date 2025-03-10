@@ -8,7 +8,7 @@ namespace DS.Core.Sync.Strategies
 
         public LocalSync(ILocalStorage storage) => _storage = storage;
 
-        public void Execute(SyncJob job) => _storage.Save(job.Key, job.Data);
+        public void ExecuteAsync(SyncJob job) => _storage.Save(job.Key, job.Data);
         public bool Handles(SyncTarget target) => target == SyncTarget.Local;
     }
 }

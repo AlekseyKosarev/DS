@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using DS.Core.Enums;
 using DS.Core.Interfaces;
 
@@ -19,19 +22,28 @@ namespace DS.Core.Sync
         public void Queue(SyncTarget target, SyncJob job) {
             _queues[target].Enqueue(job);
         }
-
-        public void ProcessQueue(SyncTarget target) {
+        public async UniTask ProcessQueueAsync(SyncTarget target, CancellationToken token) {
             if (_queues.TryGetValue(target, out var queue)) {
                 while (queue.TryDequeue(out var job)) {
-                    var strategy = Array.Find(_strategies, s => s.Handles(target));
-                    try {
-                        strategy.Execute(job);
-                        job.OnComplete?.Invoke();
-                    } catch (Exception ex) {
-                        job.OnError?.Invoke(ex);
-                    }
+                    token.ThrowIfCancellationRequested();
+                    var strategy = _strategies.First(s => s.Handles(target));
+                    await strategy.ExecuteAsync(job, token);
                 }
             }
         }
+
+        // public void ProcessQueue(SyncTarget target) {
+        //     if (_queues.TryGetValue(target, out var queue)) {
+        //         while (queue.TryDequeue(out var job)) {
+        //             var strategy = Array.Find(_strategies, s => s.Handles(target));
+        //             try {
+        //                 strategy.ExecuteAsync(job);
+        //                 job.OnComplete?.Invoke();
+        //             } catch (Exception ex) {
+        //                 job.OnError?.Invoke(ex);
+        //             }
+        //         }
+        //     }
+        // }
     }
 }
