@@ -1,6 +1,7 @@
 using System;
+using DS.Models;
 
-namespace _Project.System.DataManagementService
+namespace DS.Core.Interfaces
 {
     public interface ICacheStorage {
         T Get<T>(string key) where T : DataEntity;

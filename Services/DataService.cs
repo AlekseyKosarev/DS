@@ -1,6 +1,10 @@
 using System;
+using DS.Core.Enums;
+using DS.Core.Interfaces;
+using DS.Core.Sync;
+using DS.Models;
 
-namespace _Project.System.DataManagementService
+namespace DS.Services
 {
     public class DataService {
         private readonly ICacheStorage _cacheStorage;

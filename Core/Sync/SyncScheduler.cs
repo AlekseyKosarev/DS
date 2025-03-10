@@ -1,6 +1,8 @@
 using System.Threading;
+using DS.Core.Enums;
+using DS.Models;
 
-namespace _Project.System.DataManagementService
+namespace DS.Core.Sync
 {
     public class SyncScheduler {
         private readonly SyncManager _syncManager;

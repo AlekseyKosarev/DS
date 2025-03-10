@@ -1,4 +1,4 @@
-namespace _Project.System.DataManagementService
+namespace DS.Models
 {
     public class PlayerData : DataEntity {
         public string Name { get; set; }

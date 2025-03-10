@@ -1,4 +1,8 @@
-namespace _Project.System.DataManagementService
+using DS.Core.Enums;
+using DS.Core.Interfaces;
+using DS.Utilites;
+
+namespace DS.Core.Sync.Strategies
 {
     public class RemoteSync : ISyncStrategy {
         private readonly IRemoteStorage _remote;

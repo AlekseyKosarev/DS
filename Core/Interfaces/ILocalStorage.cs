@@ -1,4 +1,6 @@
-namespace _Project.System.DataManagementService
+using DS.Models;
+
+namespace DS.Core.Interfaces
 {
     public interface ILocalStorage {
         void Save(string key, object data);

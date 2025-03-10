@@ -1,7 +1,9 @@
 using System.Net.Http;
+using DS.Core.Interfaces;
+using DS.Models;
 using Newtonsoft.Json;
 
-namespace _Project.System.DataManagementService
+namespace DS.Core.Storage
 {
     public class RestStorage : IRemoteStorage {
         private readonly HttpClient _httpClient = new HttpClient();

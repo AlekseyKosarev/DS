@@ -1,6 +1,6 @@
 using System;
 
-namespace _Project.System.DataManagementService
+namespace DS.Models
 {
     public class SyncSettings {
         public TimeSpan LocalInterval { get; set; } = TimeSpan.FromMinutes(5);

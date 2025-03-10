@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
+using DS.Core.Interfaces;
+using DS.Models;
 
-namespace _Project.System.DataManagementService
+namespace DS.Core.Cache
 {
     public class MemoryCacheStorage : ICacheStorage {
         private readonly ConcurrentDictionary<string, CacheEntry> _cache = new();

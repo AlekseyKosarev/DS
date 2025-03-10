@@ -1,4 +1,4 @@
-namespace _Project.System.DataManagementService
+namespace DS.Core.Enums
 {
     public enum SyncTarget { Local, Remote }
 }

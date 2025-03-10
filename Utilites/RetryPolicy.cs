@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 
-namespace _Project.System.DataManagementService
+namespace DS.Utilites
 {
     public class RetryPolicy {
         private readonly int _maxRetries = 5;

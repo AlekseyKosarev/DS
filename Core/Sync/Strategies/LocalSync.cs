@@ -1,4 +1,7 @@
-namespace _Project.System.DataManagementService
+using DS.Core.Enums;
+using DS.Core.Interfaces;
+
+namespace DS.Core.Sync.Strategies
 {
     public class LocalSync : ISyncStrategy {
         private readonly ILocalStorage _storage;

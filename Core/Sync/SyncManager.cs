@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Concurrent;
+using DS.Core.Enums;
+using DS.Core.Interfaces;
 
-namespace _Project.System.DataManagementService
+namespace DS.Core.Sync
 {
     public class SyncManager {
         private readonly ConcurrentDictionary<SyncTarget, ConcurrentQueue<SyncJob>> _queues = new();

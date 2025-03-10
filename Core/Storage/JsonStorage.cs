@@ -1,8 +1,10 @@
 using System;
 using System.IO;
+using DS.Core.Interfaces;
+using DS.Models;
 using Newtonsoft.Json;
 
-namespace _Project.System.DataManagementService
+namespace DS.Core.Storage
 {
     public class JsonStorage : ILocalStorage {
         public void Save(string key, object data) {

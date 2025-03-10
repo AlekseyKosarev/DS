@@ -1,6 +1,6 @@
 using System;
 
-namespace _Project.System.DataManagementService
+namespace DS.Core.Sync
 {
     public class SyncJob {
         public string Key { get; }
