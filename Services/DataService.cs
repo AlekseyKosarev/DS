@@ -1,12 +1,8 @@
 using System;
-using DS.Core.Cache;
 using DS.Core.Enums;
 using DS.Core.Interfaces;
-using DS.Core.Storage;
 using DS.Core.Sync;
-using DS.Core.Sync.Strategies;
 using DS.Models;
-using DS.Utilites;
 
 namespace DS.Services
 {

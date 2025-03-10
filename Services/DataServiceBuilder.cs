@@ -1,16 +1,16 @@
 // DataServiceBuilder.cs (в папке Services)
 
 using System.Collections.Generic;
+using DS.Configs;
 using DS.Core.Cache;
 using DS.Core.Interfaces;
 using DS.Core.Storage;
 using DS.Core.Sync;
 using DS.Core.Sync.Strategies;
 using DS.Models;
-using DS.Services;
 using DS.Utilites;
 
-namespace _Project.System.DS.Services
+namespace DS.Services
 {
     public class DataServiceBuilder 
     {

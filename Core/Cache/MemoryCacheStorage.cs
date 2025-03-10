@@ -5,6 +5,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using DS.Core.Interfaces;
 using DS.Models;
+using DS.Utilites;
 
 namespace DS.Core.Cache
 {
@@ -37,7 +38,7 @@ namespace DS.Core.Cache
             
                 // Проверяем размер кэша
                 if (_cache.Count >= _maxSize) {
-                    RemoveOldest(); // Удаляем старые элементы
+                    RemoveOldestEntry(); // Удаляем старые элементы
                 }
 
                 _cache.AddOrUpdate(key, entry, (k, old) => entry);
@@ -48,29 +49,61 @@ namespace DS.Core.Cache
         }
 
         public void Remove(string key) => _cache.TryRemove(key, out _);
-        private async UniTask CleanupAsync() {
-            // Логика очистки кэша
-        }
-        private void Cleanup(object state) {
-            var now = DateTime.UtcNow;
-            foreach (var key in _cache.Keys.ToList()) {
+        private async UniTask CleanupAsync(CancellationToken token = default) {
+            // Получаем список ключей безопасно
+            var keys = _cache.Keys.ToList();
+    
+            foreach (var key in keys) {
+                token.ThrowIfCancellationRequested();
+        
                 if (_cache.TryGetValue(key, out var entry)) {
-                    if (entry.IsExpired() || _cache.Count > _maxSize) {
+                    // Проверяем срок годности
+                    if (entry.IsExpired()) {
                         _cache.TryRemove(key, out _);
+                        continue;
+                    }
+
+                    // Проверяем превышение размера кэша
+                    if (_cache.Count > _maxSize) {
+                        RemoveOldestEntry();
                     }
                 }
             }
-        }
-        // Метод для удаления старых элементов по LRU
-        private void RemoveOldest() {
-            if (_cache.IsEmpty) return;
 
+            // Асинхронная задержка для периодического выполнения
+            await UniTask.Delay(TimeSpan.FromSeconds(1), cancellationToken: token);
+        }
+        // Вспомогательный метод для удаления старых элементов
+        private void RemoveOldestEntry() {
             var oldestKey = _cache
                 .OrderBy(kvp => kvp.Value.LastAccess)
-                .FirstOrDefault().Key;
+                .Select(kvp => kvp.Key)
+                .FirstOrDefault();
 
-            _cache.TryRemove(oldestKey, out _);
+            if (!string.IsNullOrEmpty(oldestKey)) {
+                _cache.TryRemove(oldestKey, out _);
+            }
         }
+        // private void Cleanup(object state) {
+        //     var now = DateTime.UtcNow;
+        //     foreach (var key in _cache.Keys.ToList()) {
+        //         if (_cache.TryGetValue(key, out var entry)) {
+        //             if (entry.IsExpired() || _cache.Count > _maxSize) {
+        //                 _cache.TryRemove(key, out _);
+        //             }
+        //         }
+        //     }
+        // }
+        // Метод для удаления старых элементов по LRU
+        // private void RemoveOldest() {
+        //     if (_cache.IsEmpty) return;
+        //
+        //     var oldestKey = _cache
+        //         .OrderBy(kvp => kvp.Value.LastAccess)
+        //         .FirstOrDefault().Key;
+        //
+        //     _cache.TryRemove(oldestKey, out _);
+        // }
         public void Dispose() {
             _cleanupTimer?.Dispose();
         }

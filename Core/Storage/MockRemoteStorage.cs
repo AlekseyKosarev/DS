@@ -2,16 +2,19 @@ using DS.Core.Interfaces;
 using DS.Models;
 using UnityEngine;
 
-public class MockRemoteStorage: IRemoteStorage
+namespace DS.Core.Storage
 {
-    public void Upload(string key, object data)
+    public class MockRemoteStorage: IRemoteStorage
     {
-        Debug.Log("MockRemoteStorage.Upload = " + key);
-    }
+        public void Upload(string key, object data)
+        {
+            Debug.Log("MockRemoteStorage.Upload = " + key);
+        }
 
-    public T Download<T>(string key) where T : DataEntity
-    {
-        Debug.Log("MockRemoteStorage.Download = " + key);
-        return null;
+        public T Download<T>(string key) where T : DataEntity
+        {
+            Debug.Log("MockRemoteStorage.Download = " + key);
+            return null;
+        }
     }
 }

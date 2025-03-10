@@ -1,3 +1,5 @@
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using DS.Core.Enums;
 using DS.Core.Interfaces;
 using DS.Utilites;
@@ -13,7 +15,7 @@ namespace DS.Core.Sync.Strategies
             _retryPolicy = retryPolicy;
         }
 
-        public void ExecuteAsync(SyncJob job) => _retryPolicy.Execute(() => _remote.Upload(job.Key, job.Data));
+        public async UniTask ExecuteAsync(SyncJob job, CancellationToken token) => _retryPolicy.Execute(() => _remote.Upload(job.Key, job.Data));
         public bool Handles(SyncTarget target) => target == SyncTarget.Remote;
     }
 }
