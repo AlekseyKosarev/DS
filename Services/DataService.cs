@@ -1,4 +1,6 @@
 using System;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using DS.Core.Enums;
 using DS.Core.Interfaces;
 using DS.Core.Sync;
@@ -6,7 +8,7 @@ using DS.Models;
 
 namespace DS.Services
 {
-    public class DataService {
+    public class DataService: IDisposable {
         private readonly ICacheStorage _cacheStorage;
         private readonly SyncManager _syncManager;
         private readonly ILocalStorage _localStorage;
@@ -19,39 +21,46 @@ namespace DS.Services
             _remoteStorage = remoteStorage;
         }
 
-        public void Save<T>(string key, T data, Action onComplete = null, Action<Exception> onError = null) where T : DataEntity {
-            data.Version++;
-            data.LastModified = DateTime.UtcNow;
+        public UniTask<Result<T>> SaveAsync<T>(string key, T data, CancellationToken token = default) where T : DataEntity {
+            try {
+                data.Version++;
+                data.LastModified = DateTime.UtcNow;
 
-            _cacheStorage.Set(key, data, TimeSpan.FromMinutes(10), onComplete, onError);
-            _syncManager.Queue(SyncTarget.Local, new SyncJob(key, data) {
-                OnComplete = onComplete,
-                OnError = onError
-            });
-            _syncManager.Queue(SyncTarget.Remote, new SyncJob(key, data) {
-                OnComplete = onComplete,
-                OnError = onError
-            });
+                _cacheStorage.Set(key, data, TimeSpan.FromMinutes(10));
+
+                _syncManager.Queue(SyncTarget.Local, new SyncJob(key, data));
+                _syncManager.Queue(SyncTarget.Remote, new SyncJob(key, data));
+
+                return UniTask.FromResult(Result<T>.Success(data));
+            } catch (Exception ex) {
+                return UniTask.FromResult(Result<T>.Failure($"Save failed: {ex.Message}"));
+            }
         }
 
-        public T Load<T>(string key) where T : DataEntity {
-            var cached = _cacheStorage.Get<T>(key);
-            if (cached != null) return cached;
+        public async UniTask<Result<T>> LoadAsync<T>(string key, CancellationToken token = default) where T : DataEntity {
+            try {
+                var cached = _cacheStorage.Get<T>(key);
+                if (cached != null) return Result<T>.Success(cached);
 
-            var local = _localStorage.Load<T>(key);
-            if (local != null) {
-                _cacheStorage.Set(key, local, TimeSpan.FromMinutes(10));
-                return local;
+                // Загрузка из локального хранилища
+                var local = await _localStorage.LoadAsync<T>(key, token);
+                if (local.IsSuccess) {
+                    _cacheStorage.Set(key, local.Data, TimeSpan.FromMinutes(10));
+                    return local;
+                }
+
+                // Загрузка из удаленного хранилища
+                var remote = await _remoteStorage.DownloadAsync<T>(key, token);
+                if (remote.IsSuccess) {
+                    _cacheStorage.Set(key, remote.Data, TimeSpan.FromMinutes(10));
+                    _syncManager.Queue(SyncTarget.Local, new SyncJob(key, remote.Data));
+                    return remote;
+                }
+
+                return Result<T>.Failure("Data not found.");
+            } catch (Exception ex) {
+                return Result<T>.Failure($"Load failed: {ex.Message}");
             }
-
-            var remote = _remoteStorage.Download<T>(key);
-            if (remote != null) {
-                _cacheStorage.Set(key, remote, TimeSpan.FromMinutes(10));
-                _syncManager.Queue(SyncTarget.Local, new SyncJob(key, remote));
-                return remote;
-            }
-
-            return null;
         }
         
         public void ClearCache(string key) {
@@ -59,8 +68,16 @@ namespace DS.Services
         }
 
         public void DeleteLocalData(string key) {
-            _localStorage.Delete(key);
+            _localStorage.DeleteAsync(key);
             _cacheStorage.Remove(key);
+        }
+
+        public void Dispose() {
+            // Освобождаем ресурсы
+            (_cacheStorage as IDisposable)?.Dispose();
+            (_syncManager as IDisposable)?.Dispose();
+            (_localStorage as IDisposable)?.Dispose();
+            (_remoteStorage as IDisposable)?.Dispose();
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using DS.Configs;
 using DS.Core.Sync;
 using DS.Services;
@@ -11,31 +12,31 @@ namespace DS.Examples
         private DataService _dataService;
         private ExampleData _player;
         private SyncScheduler _syncScheduler;
-        public void Init() {
-            // // Инициализация системы
-            // var cache = new MemoryCacheStorage();
-            // var localStorage = new JsonStorage();
-            // var remoteStorage = new MockRemoteStorage();
-            // var syncManager = new SyncManager(
-            //     new LocalSync(localStorage),
-            //     new RemoteSync(remoteStorage, new RetryPolicy())
-            // );
-            // _dataService = new DataService(cache, syncManager, localStorage, remoteStorage);
-        
-            // Загрузка данных
-            _dataService = InitDS();
-            _player = _dataService.Load<ExampleData>("player");
-            if (_player == null) {
-                _player = new ExampleData { playerName = "NewPlayer", level = 1, health = 100 };
-                SavePlayerData();
-            }
 
-            // Инициализация синхронизации
 
-            // InitSync(syncManager);
+        public void InitClick()
+        {
+            _ = Init();
         }
 
-        DataService InitDS()
+        public void SaveClick()
+        {
+            _ = SavePlayerData();
+        }
+        public async Task Init() {
+            _dataService = InitDS();
+
+            // Загрузка данных с обработкой результата
+            var loadResult = await _dataService.LoadAsync<ExampleData>("player");
+            if (loadResult.IsSuccess) {
+                _player = loadResult.Data;
+            } else {
+                _player = new ExampleData { playerName = "NewPlayer", level = 1, health = 100 };
+                await SavePlayerData();
+            }
+        }
+
+        DataService InitDS() 
         {
             var config = new DSConfig {
                 LocalSyncInterval = TimeSpan.FromSeconds(10),
@@ -53,32 +54,22 @@ namespace DS.Examples
             _syncScheduler = builder.GetScheduler();
             return dataService;
         }
-        //
-        // void InitSync(SyncManager syncManager)
-        // {
-        //     var syncSettings = new SyncSettings {
-        //         LocalInterval = TimeSpan.FromSeconds(10),  // Каждые 30 секунд
-        //         RemoteInterval = TimeSpan.FromMinutes(5)   // Каждые 5 минут
-        //     };
-        //
-        //     _syncScheduler = new SyncScheduler(syncManager, syncSettings);
-        // }
 
-        public void SavePlayerData() {
-            _dataService.Save("player", _player, 
-                onComplete: () => Debug.Log("Save successful"),
-                onError: ex => Debug.LogError($"Save error: {ex.Message}")
-            );
+        public async Task SavePlayerData() {
+            var saveResult = await _dataService.SaveAsync("player", _player);
+            if (!saveResult.IsSuccess) {
+                Debug.LogError($"Failed to save player data: {saveResult.ErrorMessage}");
+            }
         }
 
-        // Пример обновления данных
         public void UpgradeLevel() {
             _player.level++;
-            SavePlayerData();
+            _ = SavePlayerData();
         }
+
         void OnDestroy() {
-            // Освобождаем ресурсы
             _syncScheduler?.Dispose();
+            (_dataService as IDisposable)?.Dispose();
         }
     }
 }

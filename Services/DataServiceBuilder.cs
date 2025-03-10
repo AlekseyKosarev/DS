@@ -1,10 +1,10 @@
 // DataServiceBuilder.cs (в папке Services)
 
 using System.Collections.Generic;
+using _Project.System.DS.Core.Storage;
 using DS.Configs;
 using DS.Core.Cache;
 using DS.Core.Interfaces;
-using DS.Core.Storage;
 using DS.Core.Sync;
 using DS.Core.Sync.Strategies;
 using DS.Models;
@@ -44,7 +44,7 @@ namespace DS.Services
         
             if (!string.IsNullOrEmpty(_config.RemoteApiUrl)) 
             {
-                strategies.Add(new RemoteSync(remoteStorage, new RetryPolicy()));
+                strategies.Add(new RemoteSync(remoteStorage));
             }
 
             // 5. Создаем менеджер синхронизации

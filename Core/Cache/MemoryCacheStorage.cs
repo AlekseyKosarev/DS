@@ -6,10 +6,11 @@ using Cysharp.Threading.Tasks;
 using DS.Core.Interfaces;
 using DS.Models;
 using DS.Utilites;
+using UnityEngine;
 
 namespace DS.Core.Cache
 {
-    public class MemoryCacheStorage : ICacheStorage {
+    public class MemoryCacheStorage : ICacheStorage, IDisposable {
         private readonly ConcurrentDictionary<string, CacheEntry> _cache = new();
         private readonly AsyncTimer _cleanupTimer;
         private readonly int _maxSize; // Сохраняем maxSize
@@ -18,7 +19,7 @@ namespace DS.Core.Cache
             _maxSize = maxSize;
             _defaultTTL = ttl;
             _cleanupTimer = new AsyncTimer();
-            _cleanupTimer.Start(TimeSpan.FromMinutes(1), async token => {
+            _cleanupTimer.Start(_defaultTTL, async token => {
                 await CleanupAsync();
             });
         }
@@ -84,28 +85,15 @@ namespace DS.Core.Cache
                 _cache.TryRemove(oldestKey, out _);
             }
         }
-        // private void Cleanup(object state) {
-        //     var now = DateTime.UtcNow;
-        //     foreach (var key in _cache.Keys.ToList()) {
-        //         if (_cache.TryGetValue(key, out var entry)) {
-        //             if (entry.IsExpired() || _cache.Count > _maxSize) {
-        //                 _cache.TryRemove(key, out _);
-        //             }
-        //         }
-        //     }
-        // }
-        // Метод для удаления старых элементов по LRU
-        // private void RemoveOldest() {
-        //     if (_cache.IsEmpty) return;
-        //
-        //     var oldestKey = _cache
-        //         .OrderBy(kvp => kvp.Value.LastAccess)
-        //         .FirstOrDefault().Key;
-        //
-        //     _cache.TryRemove(oldestKey, out _);
-        // }
         public void Dispose() {
+            // Отменяем таймер
             _cleanupTimer?.Dispose();
+
+            // Очищаем кэш
+            _cache.Clear();
+
+            // Логирование (опционально)
+            Debug.Log("MemoryCacheStorage disposed and resources released.");
         }
 
         private class CacheEntry {

@@ -1135,8 +1135,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 801823821}
-        m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
-        m_MethodName: SavePlayerData
+        m_TargetAssemblyTypeName: DS.Examples.GameManager, Assembly-CSharp
+        m_MethodName: SaveClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1268,8 +1268,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 801823821}
-        m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
-        m_MethodName: Init
+        m_TargetAssemblyTypeName: DS.Examples.GameManager, Assembly-CSharp
+        m_MethodName: InitClick
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

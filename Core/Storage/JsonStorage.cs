@@ -1,52 +1,60 @@
 using System;
 using System.IO;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using DS.Core.Interfaces;
 using DS.Models;
 using Newtonsoft.Json;
-using UnityEngine;
 
-namespace DS.Core.Storage
+namespace _Project.System.DS.Core.Storage
 {
     public class JsonStorage : ILocalStorage {
-        private readonly string _path;
+        private readonly string _storagePath;
 
         public JsonStorage(string storagePath) {
-            _path = storagePath;
-            Directory.CreateDirectory(_path); // Создаем папку при инициализации
+            _storagePath = storagePath;
+            Directory.CreateDirectory(_storagePath);
         }
 
         private string GetPath(string key) {
-            return Path.Combine(_path, $"{key}.json");
+            return Path.Combine(_storagePath, $"{key}.json");
         }
 
-        public void Save(string key, object data) {
-            var path = GetPath(key);
+        public async UniTask<Result> SaveAsync(string key, object data, CancellationToken token = default) {
             try {
+                var path = GetPath(key);
                 var json = JsonConvert.SerializeObject(data);
-                File.WriteAllText(path, json);
+                await File.WriteAllTextAsync(path, json, token);
+                return Result.Success();
             } catch (Exception ex) {
-                Debug.LogError($"Save error: {ex.Message}");
+                return Result.Failure($"Save failed: {ex.Message}");
             }
         }
 
-        public T Load<T>(string key) where T : DataEntity {
-            var path = GetPath(key);
-            if (!File.Exists(path)) return null;
-        
+        public async UniTask<Result<T>> LoadAsync<T>(string key, CancellationToken token = default) where T : DataEntity {
             try {
-                var json = File.ReadAllText(path);
-                return JsonConvert.DeserializeObject<T>(json);
+                var path = GetPath(key);
+                if (!File.Exists(path)) return Result<T>.Failure("File not found.");
+
+                var json = await File.ReadAllTextAsync(path, token);
+                var data = JsonConvert.DeserializeObject<T>(json);
+                return Result<T>.Success(data);
             } catch (Exception ex) {
-                Debug.LogError($"Load error: {ex.Message}");
-                return null;
+                return Result<T>.Failure($"Load failed: {ex.Message}");
             }
         }
 
-        public void Delete(string key) {
-            var path = GetPath(key);
-            if (File.Exists(path)) {
-                File.Delete(path);
+        public UniTask<Result> DeleteAsync(string key, CancellationToken token = default) {
+            try {
+                var path = GetPath(key);
+                if (File.Exists(path)) {
+                    File.Delete(path);
+                }
+                return UniTask.FromResult(Result.Success());
+            } catch (Exception ex) {
+                return UniTask.FromResult(Result.Failure($"Delete failed: {ex.Message}"));
             }
         }
     }
+    
 }
