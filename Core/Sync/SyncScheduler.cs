@@ -16,10 +16,8 @@ namespace DS.Core.Sync
             UniTask.Create(async () => {
                 while (!_cts.IsCancellationRequested)
                 {
-                    // Debug.Log("Start local sync");
                     await UniTask.Delay(settings.LocalInterval, cancellationToken: _cts.Token);
                     await syncManager.ProcessQueueAsync(SyncTarget.Local, _cts.Token);
-                    // Debug.Log("Finish local sync");
                 }
             }).Forget();
 
@@ -27,10 +25,8 @@ namespace DS.Core.Sync
             UniTask.Create(async () => {
                 while (!_cts.IsCancellationRequested) 
                 {
-                    // Debug.Log("Start remote sync");
                     await UniTask.Delay(settings.RemoteInterval, cancellationToken: _cts.Token);
                     await syncManager.ProcessQueueAsync(SyncTarget.Remote, _cts.Token);
-                    // Debug.Log("Finish remote sync");
                 }
             }).Forget();
         }

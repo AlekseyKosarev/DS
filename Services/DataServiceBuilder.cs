@@ -26,7 +26,7 @@ namespace DS.Services
         public DataService Build() 
         {
             // 1. Создаем кэш
-            var cache = new MemoryCacheStorage(_config.CacheMaxSize, _config.CacheTTL);
+            var cache = new MemoryCacheStorage();
 
             // 2. Создаем локальное хранилище
             ILocalStorage localStorage = new JsonStorage(_config.LocalStoragePath);
