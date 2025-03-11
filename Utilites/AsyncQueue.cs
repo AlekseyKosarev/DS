@@ -2,11 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using UnityEngine;
 
-public class AsyncQueue<T> {
+public class AsyncQueue<T> : IDisposable {
     private readonly Queue<T> _queue = new();
     private readonly SemaphoreSlim _semaphore = new(0);
-    private CancellationTokenSource _cts = new();
+    private bool _disposed;
 
     public void Enqueue(T item) {
         lock (_queue) {
@@ -16,7 +17,7 @@ public class AsyncQueue<T> {
     }
 
     public async UniTask<T> DequeueAsync(CancellationToken token = default) {
-        while (true) {
+        while (!_disposed) {
             token.ThrowIfCancellationRequested(); // Проверяем токен отмены
 
             try {
@@ -31,10 +32,13 @@ public class AsyncQueue<T> {
                 }
             }
         }
+
+        throw new ObjectDisposedException(nameof(AsyncQueue<T>));
     }
 
     public void Dispose() {
-        _cts?.Cancel();
-        _cts?.Dispose();
+        _disposed = true;
+        _semaphore.Dispose();
+        // Debug.Log("AsyncQueue disposed.");
     }
 }

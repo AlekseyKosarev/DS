@@ -63,6 +63,41 @@ namespace DS.Services
             }
         }
         
+        // Получение данных из кэша
+        public T GetFromCache<T>(string key) where T : DataEntity {
+            return _cacheStorage.Get<T>(key);
+        }
+        // Асинхронное получение из локального хранилища
+        public async UniTask<Result<T>> GetFromLocalStorageAsync<T>(string key, CancellationToken token = default) 
+            where T : DataEntity 
+        {
+            try {
+                return await _localStorage.LoadAsync<T>(key, token);
+            } catch (Exception ex) {
+                return Result<T>.Failure($"Local load failed: {ex.Message}");
+            }
+        }
+        // Асинхронное получение из удаленного хранилища
+        public async UniTask<Result<T>> GetFromRemoteStorageAsync<T>(string key, CancellationToken token = default) 
+            where T : DataEntity 
+        {
+            try {
+                return await _remoteStorage.DownloadAsync<T>(key, token);
+            } catch (Exception ex) {
+                return Result<T>.Failure($"Remote load failed: {ex.Message}");
+            }
+        }
+        
+        public async UniTask<DebugDataSnapshot<T>> GetDebugSnapshotAsync<T>(string key, CancellationToken token = default) 
+            where T : DataEntity 
+        {
+            var snapshot = new DebugDataSnapshot<T> {
+                CacheData = GetFromCache<T>(key),
+                LocalData = await GetFromLocalStorageAsync<T>(key, token),
+                RemoteData = await GetFromRemoteStorageAsync<T>(key, token)
+            };
+            return snapshot;
+        }
         public void ClearCache(string key) {
             _cacheStorage.Remove(key);
         }

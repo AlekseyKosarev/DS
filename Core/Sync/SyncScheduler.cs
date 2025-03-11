@@ -1,32 +1,43 @@
 using System;
 using System.Threading;
+using Cysharp.Threading.Tasks;
 using DS.Core.Enums;
 using DS.Models;
 using DS.Utilites;
+using UnityEngine;
 
 namespace DS.Core.Sync
 {
-    public class SyncScheduler: IDisposable {
-        private readonly AsyncTimer _localTimer;
-        private readonly AsyncTimer _remoteTimer;
+    public class SyncScheduler: IDisposable
+    {
         private readonly CancellationTokenSource _cts = new();
         public SyncScheduler(SyncManager syncManager, SyncSettings settings) {
-            _localTimer = new AsyncTimer();
-            _localTimer.Start(settings.LocalInterval, async token => {
-                await syncManager.ProcessQueueAsync(SyncTarget.Local, _cts.Token);
-            });
+            // Локальная синхронизация
+            UniTask.Create(async () => {
+                while (!_cts.IsCancellationRequested)
+                {
+                    // Debug.Log("Start local sync");
+                    await UniTask.Delay(settings.LocalInterval, cancellationToken: _cts.Token);
+                    await syncManager.ProcessQueueAsync(SyncTarget.Local, _cts.Token);
+                    // Debug.Log("Finish local sync");
+                }
+            }).Forget();
 
-            _remoteTimer = new AsyncTimer();
-            _remoteTimer.Start(settings.RemoteInterval, async token => {
-                await syncManager.ProcessQueueAsync(SyncTarget.Remote, _cts.Token);
-            });
+            // Удаленная синхронизация
+            UniTask.Create(async () => {
+                while (!_cts.IsCancellationRequested) 
+                {
+                    // Debug.Log("Start remote sync");
+                    await UniTask.Delay(settings.RemoteInterval, cancellationToken: _cts.Token);
+                    await syncManager.ProcessQueueAsync(SyncTarget.Remote, _cts.Token);
+                    // Debug.Log("Finish remote sync");
+                }
+            }).Forget();
         }
 
         public void Dispose() {
-            _cts.Cancel(); // Отменяем все задачи
+            _cts.Cancel();
             _cts.Dispose();
-            _localTimer?.Dispose();
-            _remoteTimer?.Dispose();
         }
     }
 }

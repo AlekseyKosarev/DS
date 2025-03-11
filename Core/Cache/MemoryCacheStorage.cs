@@ -89,7 +89,7 @@ namespace DS.Core.Cache
             _cleanupTimer?.Dispose();
             _cache.Clear();
 
-            Debug.Log("MemoryCacheStorage disposed and resources released.");
+            // Debug.Log("MemoryCacheStorage disposed and resources released.");
         }
 
         private class CacheEntry {

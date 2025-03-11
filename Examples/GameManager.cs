@@ -12,6 +12,7 @@ namespace DS.Examples
         private DataService _dataService;
         private ExampleData _player;
         private SyncScheduler _syncScheduler;
+        public DataMonitorUI dataMonitorUI;
 
 
         public void InitClick()
@@ -25,7 +26,7 @@ namespace DS.Examples
         }
         public async Task Init() {
             _dataService = InitDS();
-
+            dataMonitorUI.Init(_dataService);
             // Загрузка данных с обработкой результата
             var loadResult = await _dataService.LoadAsync<ExampleData>("player");
             if (loadResult.IsSuccess) {
@@ -39,10 +40,10 @@ namespace DS.Examples
         DataService InitDS() 
         {
             var config = new DSConfig {
-                LocalSyncInterval = TimeSpan.FromSeconds(10),
-                RemoteSyncInterval = TimeSpan.FromMinutes(5),
-                CacheMaxSize = 500,
-                CacheTTL = TimeSpan.FromMinutes(5),
+                LocalSyncInterval = TimeSpan.FromSeconds(5),
+                RemoteSyncInterval = TimeSpan.FromSeconds(5),
+                CacheMaxSize = 0,
+                CacheTTL = TimeSpan.FromSeconds(15),
                 LocalStoragePath = Path.Combine(
                     Application.dataPath, 
                     "_Game", "_Saves"
