@@ -71,6 +71,7 @@ namespace DS.Core.Cache
                 }
             }
 
+            Debug.Log("Cache cleanup completed.");
             // Асинхронная задержка для периодического выполнения
             await UniTask.Delay(TimeSpan.FromSeconds(1), cancellationToken: token);
         }

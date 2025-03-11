@@ -6,16 +6,16 @@ using DS.Models;
 
 namespace DS.Core.Sync.Strategies
 {
-    public class RemoteSync : ISyncStrategy {
+    public class RemoteSync : BaseSyncStrategy {
         private readonly IRemoteStorage _remoteStorage;
 
         public RemoteSync(IRemoteStorage remoteStorage) {
             _remoteStorage = remoteStorage;
         }
 
-        public bool Handles(SyncTarget target) => target == SyncTarget.Remote;
+        public override bool Handles(SyncTarget target) => target == SyncTarget.Remote;
 
-        public async UniTask<Result> ExecuteAsync(SyncJob job) {
+        public override async UniTask<Result> ExecuteAsync(SyncJob job) {
             try {
                 var uploadResult = await _remoteStorage.UploadAsync(job.Key, job.Data);
                 return uploadResult;

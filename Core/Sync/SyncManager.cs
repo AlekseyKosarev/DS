@@ -9,67 +9,86 @@ using UnityEngine;
 
 namespace DS.Core.Sync
 {
-    public class SyncManager: IDisposable  {
-        private readonly ConcurrentDictionary<SyncTarget, AsyncQueue<SyncJob>> _queues = new();
+    public class SyncManager : IDisposable
+    {
+        // Используем ConcurrentDictionary для хранения задач
+        private readonly ConcurrentDictionary<(SyncTarget Target, string Key), SyncJob> _pendingJobs = new();
         private readonly ISyncStrategy[] _strategies;
-        private readonly CancellationTokenSource _cts = new(); // Токен для отмены задач
+        private readonly CancellationTokenSource _cts = new();
 
-
-        public SyncManager(params ISyncStrategy[] strategies) {
-            _strategies = strategies;
-            foreach (SyncTarget target in Enum.GetValues(typeof(SyncTarget))) {
-                _queues[target] = new AsyncQueue<SyncJob>();
-            }
-            // StartProcessing().Forget();
-        }
-
-        public void Queue(SyncTarget target, SyncJob job) {
-            _queues[target].Enqueue(job);
-            Debug.Log(_queues);
-        }
-
-        // private async UniTaskVoid StartProcessing() {
-        //     var processes = new UniTask[] {
-        //         ProcessQueueAsync(SyncTarget.Local, _cts.Token),
-        //         ProcessQueueAsync(SyncTarget.Remote, _cts.Token)
-        //     };
-        //     await UniTask.WhenAll(processes);
-        // }
-
-        internal async UniTask ProcessQueueAsync(SyncTarget target, CancellationToken token = default) 
+        public SyncManager(params ISyncStrategy[] strategies)
         {
-            // Debug.Log($"Start processing queue for target {target}");
+            _strategies = strategies;
+        }
+
+        /// <summary>
+        /// Добавление задачи в очередь
+        /// </summary>
+        public void Queue(SyncTarget target, SyncJob job)
+        {
+            // Сохраняем только последнюю задачу для каждого ключа
+            _pendingJobs.AddOrUpdate(
+                (target, job.Key),
+                job,
+                (key, oldJob) => job // Заменяем старую задачу новой
+            );
+        }
+
+        /// <summary>
+        /// Обработка очереди задач
+        /// </summary>
+        internal async UniTask ProcessQueueAsync(SyncTarget target, CancellationToken token = default)
+        {
             var strategy = _strategies.FirstOrDefault(s => s.Handles(target));
             if (strategy == null) return;
 
-            // while (!token.IsCancellationRequested) {
-            try {
-                var job = await _queues[target].DequeueAsync(token); // Используем токен отмены
-                var result = await strategy.ExecuteAsync(job);
+            try
+            {
+                // Получаем все задачи для целевого хранилища
+                var jobsToProcess = _pendingJobs
+                    .Where(kvp => kvp.Key.Target == target)
+                    .ToList();
 
-                if (!result.IsSuccess) {
-                    Debug.LogError($"Sync failed for target {target}: {result.ErrorMessage}");
-                } else {
-                    Debug.Log($"Sync succeeded for target {target}.");
+                // Очищаем очередь для текущего целевого хранилища
+                foreach (var (key, _) in jobsToProcess)
+                {
+                    _pendingJobs.TryRemove(key, out _);
                 }
-            } catch (OperationCanceledException) {
+
+                // Обрабатываем все задачи пакетно
+                foreach (var (_, job) in jobsToProcess)
+                {
+                    var result = await strategy.ExecuteAsync(job);
+
+                    if (!result.IsSuccess)
+                    {
+                        Debug.LogError($"Sync failed for target {target}: {result.ErrorMessage}");
+                    }
+                    else
+                    {
+                        Debug.Log($"Sync succeeded for target {target}.");
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
                 Debug.Log($"Processing for target {target} canceled.");
-                // break; // Выходим из цикла при отмене
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 Debug.LogError($"Unexpected error in sync process: {ex.Message}");
             }
-            // }
         }
 
-        public void Dispose() {
-            _cts.Cancel(); // Отменяем все задачи
+        /// <summary>
+        /// Освобождение ресурсов
+        /// </summary>
+        public void Dispose()
+        {
+            _cts.Cancel();
             _cts.Dispose();
-
-            foreach (var queue in _queues.Values) {
-                (queue as IDisposable)?.Dispose();
-            }
-
-            // Debug.Log("SyncManager disposed");
+            _pendingJobs.Clear();
+            Debug.Log("SyncManager disposed");
         }
     }
 }
