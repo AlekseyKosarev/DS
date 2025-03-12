@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
@@ -42,6 +44,39 @@ namespace _Project.System.DS.Core.Storage
                 return Result<T>.Failure($"Download failed: {ex.Message}");
             }
         }
+
+        public async UniTask<Result<T[]>> DownloadAllAsync<T>(string[] keys, CancellationToken token = default) where T : DataEntity
+        {
+            try
+            {
+                if (keys == null || keys.Length == 0)
+                {
+                    return Result<T[]>.Failure("DownloadAll - keys array is null or empty.");
+                }
+
+                // Создаем задачи для параллельной загрузки
+                var tasks = keys.Select(key => DownloadAsync<T>(key, token));
+                var results = await UniTask.WhenAll(tasks);
+
+                // Фильтруем успешные результаты
+                var successfulResults = results
+                    .Where(result => result.IsSuccess)
+                    .Select(result => result.Data)
+                    .ToArray();
+
+                return Result<T[]>.Success(successfulResults);
+            }
+            catch (Exception ex)
+            {
+                return Result<T[]>.Failure($"DownloadAll failed: {ex.Message}");
+            }
+        }
+
+        public async UniTask<string[]> GetRemoteKeysAsync(string prefix = null, CancellationToken token = default)
+        {
+            throw new NotImplementedException();
+        }
+
         public void Dispose() {
             _httpClient.Dispose();
             Debug.Log("RestStorage disposed.");

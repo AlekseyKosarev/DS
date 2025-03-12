@@ -3,7 +3,7 @@ using DS.Models;
 namespace DS.Examples
 {
     [global::System.Serializable]
-    public class ExampleData: DataEntity
+    public class PlayerData: DataEntity
     {
         public string playerName;
         public int level;

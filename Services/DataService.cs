@@ -1,9 +1,11 @@
 using System;
+using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using DS.Core.Enums;
 using DS.Core.Interfaces;
 using DS.Core.Sync;
+using DS.Core.Utils;
 using DS.Models;
 
 namespace DS.Services
@@ -26,7 +28,7 @@ namespace DS.Services
                 data.Version++;
                 data.LastModified = DateTime.UtcNow;
 
-                _cacheStorage.Set(key, data, TimeSpan.FromMinutes(10));
+                _cacheStorage.Set(key, data);
 
                 _syncManager.Queue(SyncTarget.Local, new SyncJob(key, data));
                 _syncManager.Queue(SyncTarget.Remote, new SyncJob(key, data));
@@ -45,14 +47,14 @@ namespace DS.Services
                 // Загрузка из локального хранилища
                 var local = await _localStorage.LoadAsync<T>(key, token);
                 if (local.IsSuccess) {
-                    _cacheStorage.Set(key, local.Data, TimeSpan.FromMinutes(10));
+                    _cacheStorage.Set(key, local.Data);
                     return local;
                 }
 
                 // Загрузка из удаленного хранилища
                 var remote = await _remoteStorage.DownloadAsync<T>(key, token);
                 if (remote.IsSuccess) {
-                    _cacheStorage.Set(key, remote.Data, TimeSpan.FromMinutes(10));
+                    _cacheStorage.Set(key, remote.Data);
                     _syncManager.Queue(SyncTarget.Local, new SyncJob(key, remote.Data));
                     return remote;
                 }
@@ -61,6 +63,38 @@ namespace DS.Services
             } catch (Exception ex) {
                 return Result<T>.Failure($"Load failed: {ex.Message}");
             }
+        }
+        public async UniTask<Result<T[]>> LoadAllAsync<T>(string prefix, StorageEnum source = StorageEnum.Auto, CancellationToken token = default) where T : DataEntity
+        {
+            string[] keys;
+            if (source == StorageEnum.Auto)
+                source = StorageEnum.Cache;
+            
+            switch (source)
+            {
+                case StorageEnum.Cache:
+                    keys = _cacheStorage.GetCacheKeys(prefix);
+                    var resCache = _cacheStorage.GetAll<T>(keys);
+                    if (resCache.IsSuccess)
+                        return resCache;
+                    goto case StorageEnum.Local;
+
+                case StorageEnum.Local:
+                    keys = await _localStorage.GetLocalKeysAsync(prefix, token);
+                    var resLocal =  await _localStorage.LoadAllAsync<T>(keys.ToArray(), token);
+                    if (resLocal.IsSuccess)
+                        return resLocal;
+                    goto case StorageEnum.Remote;
+
+                case StorageEnum.Remote:
+                    keys = await _remoteStorage.GetRemoteKeysAsync(prefix, token);
+                    var resRemote = await _remoteStorage.DownloadAllAsync<T>(keys, token);
+                    if (resRemote.IsSuccess)
+                        return resRemote;
+                    break;
+            }
+
+            return Result<T[]>.Failure("Data not found.");
         }
         
         // Получение данных из кэша
@@ -101,7 +135,9 @@ namespace DS.Services
         public void ClearCache(string key) {
             _cacheStorage.Remove(key);
         }
-
+        public void ClearCache() {
+            _cacheStorage.Clear();
+        }
         public void DeleteLocalData(string key) {
             _localStorage.DeleteAsync(key);
             _cacheStorage.Remove(key);

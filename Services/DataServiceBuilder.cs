@@ -8,7 +8,6 @@ using DS.Core.Interfaces;
 using DS.Core.Sync;
 using DS.Core.Sync.Strategies;
 using DS.Models;
-using DS.Utilites;
 
 namespace DS.Services
 {

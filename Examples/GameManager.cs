@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using DS.Configs;
 using DS.Core.Sync;
+using DS.Core.Utils;
 using DS.Services;
 using UnityEngine;
 
@@ -10,7 +11,7 @@ namespace DS.Examples
 {
     public class GameManager : MonoBehaviour {
         private DataService _dataService;
-        private ExampleData _player;
+        private PlayerData _player;
         private SyncScheduler _syncScheduler;
         public DataMonitorUI dataMonitorUI;
 
@@ -28,11 +29,13 @@ namespace DS.Examples
             _dataService = InitDS();
             dataMonitorUI.Init(_dataService);
             // Загрузка данных с обработкой результата
-            var loadResult = await _dataService.LoadAsync<ExampleData>("player");
+            var loadResult = await _dataService.LoadAllAsync<PlayerData>("playerdata");
             if (loadResult.IsSuccess) {
-                _player = loadResult.Data;
+                Debug.Log("данные загружены");
+                _player = loadResult.Data[0];
             } else {
-                _player = new ExampleData { playerName = "NewPlayer", level = 1, health = 100 };
+                Debug.Log("данные не загружены");
+                _player = new PlayerData { playerName = "NewPlayer", level = 1, health = 100 };
                 await SavePlayerData();
             }
         }
@@ -42,8 +45,6 @@ namespace DS.Examples
             var config = new DSConfig {
                 LocalSyncInterval = TimeSpan.FromSeconds(5),
                 RemoteSyncInterval = TimeSpan.FromSeconds(5),
-                CacheMaxSize = 0,
-                CacheTTL = TimeSpan.FromSeconds(15),
                 LocalStoragePath = Path.Combine(
                     Application.dataPath, 
                     "_Game", "_Saves"
@@ -57,7 +58,7 @@ namespace DS.Examples
         }
 
         public async Task SavePlayerData() {
-            var saveResult = await _dataService.SaveAsync("player", _player);
+            var saveResult = await _dataService.SaveAsync(KeyNamingRules.PlayerData("1"), _player);
             if (!saveResult.IsSuccess) {
                 Debug.LogError($"Failed to save player data: {saveResult.ErrorMessage}");
             }

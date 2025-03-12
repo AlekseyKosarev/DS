@@ -6,8 +6,8 @@ namespace DS.Configs
 {
     public class DSConfig {
         // Настройки кэша
-        public TimeSpan CacheTTL { get; set; } = TimeSpan.FromMinutes(10);
-        public int CacheMaxSize { get; set; } = 1000;
+        // public TimeSpan CacheTTL { get; set; } = TimeSpan.FromMinutes(10);
+        // public int CacheMaxSize { get; set; } = 1000;
 
         // Локальное хранилище
         public string LocalStoragePath { get; set; } = Path.Combine(

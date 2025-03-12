@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using DS.Core.Utils;
 using DS.Examples;
 using UnityEngine;
 using DS.Services;
@@ -27,7 +28,7 @@ public class DataMonitorUI : MonoBehaviour {
     }
 
     private async UniTaskVoid UpdateData() {
-        var snapshot = await _dataService.GetDebugSnapshotAsync<ExampleData>("player", _cts.Token);
+        var snapshot = await _dataService.GetDebugSnapshotAsync<PlayerData>(KeyNamingRules.PlayerData("1"), _cts.Token);
 
         // Обновляем UI
         cacheText.text = snapshot.CacheData != null 

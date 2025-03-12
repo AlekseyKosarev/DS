@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using Cysharp.Threading.Tasks;
 using DS.Core.Interfaces;
 using DS.Models;
-using DS.Utilites;
 using UnityEngine;
 
 namespace DS.Core.Cache
@@ -23,7 +21,7 @@ namespace DS.Core.Cache
             return null;
         }
 
-        public void Set(string key, DataEntity data, TimeSpan ttl, Action onComplete = null, Action<Exception> onError = null)
+        public void Set(string key, DataEntity data, Action onComplete = null, Action<Exception> onError = null)
         {
             try {
                 _cache[key] = data;
@@ -34,26 +32,49 @@ namespace DS.Core.Cache
             }
         }
 
-        public void Remove(string key) => _cache.TryRemove(key, out _);
-
-        public void Dispose() 
+        public Result<T[]> GetAll<T>(string[] keys, Action<T[]> onComplete = null, Action<Exception> onError = null) where T : DataEntity
         {
-            _cache.Clear();
+            try
+            {
+                Debug.Log(keys + " " + keys.Length);
+                if (keys == null || keys.Length == 0)
+                {
+                    onError?.Invoke(new ArgumentException("Keys array is null or empty."));
+                    return Result<T[]>.Failure("not found.");
+                }
+
+                var results = new List<T>();
+
+                foreach (var key in keys)
+                {
+                    var data = _cache.TryGetValue(key, out var entity) ? entity as T : null;
+                    if (data != null)
+                    {
+                        results.Add(data);
+                    }
+                }
+                Debug.Log(keys + " " + keys.Length + results);
+                onComplete?.Invoke(results.ToArray());
+                return Result<T[]>.Success(results.ToArray());
+            }
+            catch (Exception ex)
+            {
+                onError?.Invoke(ex);
+                return Result<T[]>.Failure(ex.Message);
+            }
         }
 
-        private class CacheEntry {
-            public DataEntity Data { get; }
-            public DateTime ExpiryTime { get; }
-            public DateTime LastAccess { get; private set; }
+        public string[] GetCacheKeys(string prefix = null)
+        {
+            return _cache.Keys
+                .Where(key => string.IsNullOrEmpty(prefix) || key.StartsWith(prefix)).ToArray();
+        }
 
-            public CacheEntry(DataEntity data, TimeSpan ttl) {
-                Data = data;
-                ExpiryTime = DateTime.UtcNow.Add(ttl);
-                LastAccess = DateTime.UtcNow;
-            }
-
-            public bool IsExpired() => DateTime.UtcNow >= ExpiryTime;
-            public void Refresh() => LastAccess = DateTime.UtcNow;
+        public void Remove(string key) => _cache.TryRemove(key, out _);
+        public void Clear() => _cache.Clear();
+        public void Dispose()
+        {
+            Clear();
         }
     }
 }

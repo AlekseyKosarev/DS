@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using DS.Core.Interfaces;
@@ -42,6 +44,49 @@ namespace _Project.System.DS.Core.Storage
                 return Result<T>.Success(data);
             } catch (Exception ex) {
                 return Result<T>.Failure($"Load failed: {ex.Message}");
+            }
+        }
+
+        public async UniTask<Result<T[]>> LoadAllAsync<T>(string[] keys, CancellationToken token = default) where T : DataEntity
+        {
+            try
+            {
+                Debug.Log(keys + " " + keys.Length);
+                if (keys == null || keys.Length == 0)
+                {
+                    Debug.Log("fail = 0");
+                    return Result<T[]>.Failure($"LoadAll - keys array is null or empty.");
+                    //return Result<T[]>.Success(Array.Empty<T>());
+                }
+
+                var tasks = keys.Select(key => LoadAsync<T>(key, token));
+                var results = await UniTask.WhenAll(tasks);
+
+                var successfulResults = results
+                    .Where(result => result.IsSuccess)
+                    .Select(result => result.Data)
+                    .ToArray();
+
+                return Result<T[]>.Success(successfulResults);
+            }
+            catch (Exception ex)
+            {
+                return Result<T[]>.Failure($"LoadAll failed: {ex.Message}");
+            }
+        }
+
+        public async UniTask<string[]> GetLocalKeysAsync(string prefix = null, CancellationToken token = default)
+        {
+            try
+            {
+                var files = Directory.GetFiles(_storagePath, "*.json");
+                return files
+                    .Select(file => Path.GetFileNameWithoutExtension(file))
+                    .Where(fileName => string.IsNullOrEmpty(prefix) || fileName.StartsWith(prefix)).ToArray();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to get local keys: {ex.Message}");
             }
         }
 
