@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.Design;
 using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -7,6 +8,8 @@ using DS.Core.Interfaces;
 using DS.Core.Sync;
 using DS.Core.Utils;
 using DS.Models;
+using Unity.VisualScripting;
+using UnityEngine;
 
 namespace DS.Services
 {
@@ -64,7 +67,7 @@ namespace DS.Services
                 return Result<T>.Failure($"Load failed: {ex.Message}");
             }
         }
-        public async UniTask<Result<T[]>> LoadAllAsync<T>(string prefix, StorageEnum source = StorageEnum.Auto, CancellationToken token = default) where T : DataEntity
+        public async UniTask<Result<T[]>> LoadAllAsync<T>(string prefix, StorageEnum source = StorageEnum.Auto, bool checkNextStorage = true, CancellationToken token = default) where T : DataEntity
         {
             string[] keys;
             if (source == StorageEnum.Auto)
@@ -77,14 +80,18 @@ namespace DS.Services
                     var resCache = _cacheStorage.GetAll<T>(keys);
                     if (resCache.IsSuccess)
                         return resCache;
-                    goto case StorageEnum.Local;
+                    if (checkNextStorage)
+                        goto case StorageEnum.Local;
+                    break;
 
                 case StorageEnum.Local:
                     keys = await _localStorage.GetLocalKeysAsync(prefix, token);
                     var resLocal =  await _localStorage.LoadAllAsync<T>(keys.ToArray(), token);
                     if (resLocal.IsSuccess)
                         return resLocal;
-                    goto case StorageEnum.Remote;
+                    if (checkNextStorage)
+                        goto case StorageEnum.Remote;
+                    break;
 
                 case StorageEnum.Remote:
                     keys = await _remoteStorage.GetRemoteKeysAsync(prefix, token);
@@ -93,42 +100,16 @@ namespace DS.Services
                         return resRemote;
                     break;
             }
-
             return Result<T[]>.Failure("Data not found.");
-        }
-        
-        // Получение данных из кэша
-        public T GetFromCache<T>(string key) where T : DataEntity {
-            return _cacheStorage.Get<T>(key);
-        }
-        // Асинхронное получение из локального хранилища
-        public async UniTask<Result<T>> GetFromLocalStorageAsync<T>(string key, CancellationToken token = default) 
-            where T : DataEntity 
-        {
-            try {
-                return await _localStorage.LoadAsync<T>(key, token);
-            } catch (Exception ex) {
-                return Result<T>.Failure($"Local load failed: {ex.Message}");
-            }
-        }
-        // Асинхронное получение из удаленного хранилища
-        public async UniTask<Result<T>> GetFromRemoteStorageAsync<T>(string key, CancellationToken token = default) 
-            where T : DataEntity 
-        {
-            try {
-                return await _remoteStorage.DownloadAsync<T>(key, token);
-            } catch (Exception ex) {
-                return Result<T>.Failure($"Remote load failed: {ex.Message}");
-            }
         }
         
         public async UniTask<DebugDataSnapshot<T>> GetDebugSnapshotAsync<T>(string key, CancellationToken token = default) 
             where T : DataEntity 
         {
             var snapshot = new DebugDataSnapshot<T> {
-                CacheData = GetFromCache<T>(key),
-                LocalData = await GetFromLocalStorageAsync<T>(key, token),
-                RemoteData = await GetFromRemoteStorageAsync<T>(key, token)
+                CacheData = await LoadAllAsync<T>(key, StorageEnum.Cache,false, token),
+                LocalData = await LoadAllAsync<T>(key, StorageEnum.Local,false, token),
+                RemoteData = await LoadAllAsync<T>(key, StorageEnum.Remote,false, token)
             };
             return snapshot;
         }

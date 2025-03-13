@@ -36,7 +36,6 @@ namespace DS.Core.Cache
         {
             try
             {
-                Debug.Log(keys + " " + keys.Length);
                 if (keys == null || keys.Length == 0)
                 {
                     onError?.Invoke(new ArgumentException("Keys array is null or empty."));
@@ -53,7 +52,6 @@ namespace DS.Core.Cache
                         results.Add(data);
                     }
                 }
-                Debug.Log(keys + " " + keys.Length + results);
                 onComplete?.Invoke(results.ToArray());
                 return Result<T[]>.Success(results.ToArray());
             }

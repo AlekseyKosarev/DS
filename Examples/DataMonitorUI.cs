@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using DS.Core.Utils;
@@ -28,19 +29,19 @@ public class DataMonitorUI : MonoBehaviour {
     }
 
     private async UniTaskVoid UpdateData() {
-        var snapshot = await _dataService.GetDebugSnapshotAsync<PlayerData>(KeyNamingRules.PlayerData("1"), _cts.Token);
+        var snapshot = await _dataService.GetDebugSnapshotAsync<PlayerData>("playerdata", _cts.Token);
 
         // Обновляем UI
-        cacheText.text = snapshot.CacheData != null 
-            ? $"Cache: {snapshot.CacheData.ToDebugString()}" 
-            : "Cache: No data";
+        cacheText.text = snapshot.CacheData.IsSuccess 
+            ? $"Cache: {string.Join("\n", snapshot.CacheData.Data.Select(x => x.ToDebugString()))}" 
+            : $"Cache: {snapshot.CacheData.ErrorMessage}";
 
         localText.text = snapshot.LocalData.IsSuccess 
-            ? $"Local: {snapshot.LocalData.Data.ToDebugString()}" 
+            ? $"Local: {string.Join("\n", snapshot.LocalData.Data.Select(x => x.ToDebugString()))}" 
             : $"Local: {snapshot.LocalData.ErrorMessage}";
 
         remoteText.text = snapshot.RemoteData.IsSuccess 
-            ? $"Remote: {snapshot.RemoteData.Data.ToDebugString()}" 
+            ? $"Remote: {string.Join("\n", snapshot.RemoteData.Data.Select(x => x.ToDebugString()))}" 
             : $"Remote: {snapshot.RemoteData.ErrorMessage}";
     }
 

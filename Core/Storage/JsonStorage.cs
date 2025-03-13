@@ -51,12 +51,9 @@ namespace _Project.System.DS.Core.Storage
         {
             try
             {
-                Debug.Log(keys + " " + keys.Length);
                 if (keys == null || keys.Length == 0)
                 {
-                    Debug.Log("fail = 0");
                     return Result<T[]>.Failure($"LoadAll - keys array is null or empty.");
-                    //return Result<T[]>.Success(Array.Empty<T>());
                 }
 
                 var tasks = keys.Select(key => LoadAsync<T>(key, token));

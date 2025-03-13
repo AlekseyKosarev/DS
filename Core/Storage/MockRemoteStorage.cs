@@ -26,7 +26,7 @@ namespace _Project.System.DS.Core.Storage
 
         public UniTask<string[]> GetRemoteKeysAsync(string prefix = null, CancellationToken token = default)
         {
-            throw new NotImplementedException();
+            return new UniTask<string[]>(null);
         }
 
         public void Dispose()
