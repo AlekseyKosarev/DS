@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -6,6 +7,7 @@ using _Project.System.DS.Core.Interfaces;
 using _Project.System.DS.Models;
 using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
+using NUnit.Framework;
 
 namespace _Project.System.DS.Core.Storage
 {
@@ -34,6 +36,17 @@ namespace _Project.System.DS.Core.Storage
             }
         }
 
+        public async UniTask<Result[]> SaveAll(string[] keys, DataEntity[] data, CancellationToken token = default)
+        {
+            var tasks = new List<UniTask<Result>>();
+            for(var i = 0; i < keys.Length; i++)
+            {
+                tasks.Add(Save(keys[i], data[i], token));
+            }
+            
+            return await UniTask.WhenAll(tasks);
+        }
+
         public async UniTask<Result<T>> Load<T>(string key, CancellationToken token = default) where T : DataEntity
         {
             try
@@ -51,13 +64,11 @@ namespace _Project.System.DS.Core.Storage
             }
         }
 
-        public async UniTask<Result<T[]>> LoadAllForPrefix<T>(string prefix, CancellationToken token = default)
-            where T : DataEntity
+        public async UniTask<Result<T[]>> LoadAll<T>(string[] keys, CancellationToken token = default) where T : DataEntity
         {
             try
             {
-                var keys = await GetKeysForPrefix(prefix, token);
-                if (keys == null || keys.Length == 0) //TODO подумать куда убрать
+                if (keys == null || keys.Length == 0)
                     return Result<T[]>.Failure("LoadAll - keys array is null or empty.");
 
                 var tasks = keys.Select(key => Load<T>(key, token));
@@ -67,12 +78,27 @@ namespace _Project.System.DS.Core.Storage
                     .Where(result => result.IsSuccess)
                     .Select(result => result.Data)
                     .ToArray();
-
+            
                 return Result<T[]>.Success(successfulResults);
             }
             catch (Exception ex)
             {
                 return Result<T[]>.Failure($"LoadAll failed: {ex.Message}");
+            }
+            
+        }
+
+        public async UniTask<Result<T[]>> LoadAllForPrefix<T>(string prefix, CancellationToken token = default)
+            where T : DataEntity
+        {
+            try
+            {
+                var keys = await GetKeysForPrefix(prefix, token);
+                return await LoadAll<T>(keys, token); 
+            }
+            catch (Exception ex)
+            {
+                return Result<T[]>.Failure($"LoadAllPrefix failed: {ex.Message}");
             }
         }
 

@@ -44,7 +44,7 @@ namespace _Project.System.DS.Examples
         {
             _ds = InitDS();
             dataMonitorUI.Init(_ds);
-            LoadPlayerData();
+            LoadPlayerData().Forget();
         }
 
         private async UniTask LoadPlayerData()

@@ -38,7 +38,15 @@ namespace _Project.System.DS.Core.Sync
                 (key, oldJob) => job
             );
         }
-
+        public void AddJobsInQueue(SyncTarget target, string[] keys, DataEntity[] data)
+        {
+            
+            for (int i = 0; i < keys.Length; i++)
+            {
+                var j = new SyncJob(keys[i], data[i]);
+                AddJobInQueue(target, j);
+            }
+        }
         internal async UniTask<Result> ProcessQueueAsync(SyncTarget target, CancellationToken token = default)
         {
             var strategy = _strategies.FirstOrDefault(s => s.Handles(target));

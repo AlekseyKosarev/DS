@@ -26,6 +26,17 @@ namespace _Project.System.DS.Core.Storage.Cache
             }
         }
 
+        public async UniTask<Result[]> SaveAll(string[] keys, DataEntity[] data, CancellationToken token = default)
+        {
+            var tasks = new List<UniTask<Result>>();
+            for(var i = 0; i < keys.Length; i++)
+            {
+                tasks.Add(Save(keys[i], data[i], token));
+            }
+            
+            return await UniTask.WhenAll(tasks);
+        }
+
         public async UniTask<Result<T>> Load<T>(string key, CancellationToken token = default)
             where T : DataEntity
         {
@@ -33,12 +44,10 @@ namespace _Project.System.DS.Core.Storage.Cache
             return await UniTask.FromResult(Result<T>.Failure("not found."));
         }
 
-        public async UniTask<Result<T[]>> LoadAllForPrefix<T>(string prefix, CancellationToken token = default)
-            where T : DataEntity
+        public async UniTask<Result<T[]>> LoadAll<T>(string[] keys, CancellationToken token = default) where T : DataEntity
         {
             try
             {
-                var keys = GetKeysForPrefix(prefix, token).GetAwaiter().GetResult();
                 if (keys == null || keys.Length == 0)
                     return await UniTask.FromResult(Result<T[]>.Failure("not found."));
 
@@ -53,7 +62,22 @@ namespace _Project.System.DS.Core.Storage.Cache
             }
             catch (Exception ex)
             {
-                return await UniTask.FromResult(Result<T[]>.Failure(ex.Message));
+                return await UniTask.FromResult(Result<T[]>.Failure("Cache LoadAll failed: " + ex.Message));
+            }
+           
+        }
+
+        public async UniTask<Result<T[]>> LoadAllForPrefix<T>(string prefix, CancellationToken token = default)
+            where T : DataEntity
+        {
+            try
+            {
+                var keys = GetKeysForPrefix(prefix, token).GetAwaiter().GetResult();
+                return await LoadAll<T>(keys, token);
+            }
+            catch (Exception ex)
+            {
+                return await UniTask.FromResult(Result<T[]>.Failure("Cache LoadAllForPrefix failed: " + ex.Message));
             }
         }
 
