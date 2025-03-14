@@ -5,7 +5,8 @@ using Cysharp.Threading.Tasks;
 
 namespace _Project.System.DS.Core.Interfaces
 {
-    public interface ISyncStrategy {
+    public interface ISyncStrategy
+    {
         UniTask<Result> SyncIt(SyncJob job);
         bool Handles(SyncTarget target); // Добавлено объявление метода
     }

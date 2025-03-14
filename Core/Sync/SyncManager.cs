@@ -12,14 +12,23 @@ namespace _Project.System.DS.Core.Sync
 {
     public class SyncManager : IDisposable
     {
+        private readonly CancellationTokenSource _cts = new();
         private readonly ConcurrentDictionary<(SyncTarget Target, string Key), SyncJob> _pendingJobs = new();
         private readonly ISyncStrategy[] _strategies;
-        private readonly CancellationTokenSource _cts = new();
 
         public SyncManager(params ISyncStrategy[] strategies)
         {
             _strategies = strategies;
         }
+
+        public void Dispose()
+        {
+            _cts.Cancel();
+            _cts.Dispose();
+            _pendingJobs.Clear();
+            Debug.Log("SyncManager disposed");
+        }
+
         public void AddJobInQueue(SyncTarget target, SyncJob job)
         {
             // Сохраняем только последнюю задачу для каждого ключа
@@ -29,6 +38,7 @@ namespace _Project.System.DS.Core.Sync
                 (key, oldJob) => job
             );
         }
+
         internal async UniTask<Result> ProcessQueueAsync(SyncTarget target, CancellationToken token = default)
         {
             var strategy = _strategies.FirstOrDefault(s => s.Handles(target));
@@ -40,19 +50,14 @@ namespace _Project.System.DS.Core.Sync
                     .Where(kvp => kvp.Key.Target == target)
                     .ToList();
 
-                foreach (var (key, _) in jobsToProcess)
-                {
-                    _pendingJobs.TryRemove(key, out _);
-                }
+                foreach (var (key, _) in jobsToProcess) _pendingJobs.TryRemove(key, out _);
 
                 foreach (var (_, job) in jobsToProcess)
                 {
                     var result = await strategy.SyncIt(job);
 
                     if (!result.IsSuccess)
-                    {
                         return Result.Failure($"Sync failed for target {target}: {result.ErrorMessage}");
-                    }
                 }
             }
             catch (OperationCanceledException)
@@ -65,13 +70,6 @@ namespace _Project.System.DS.Core.Sync
             }
 
             return Result.Success();
-        }
-        public void Dispose()
-        {
-            _cts.Cancel();
-            _cts.Dispose();
-            _pendingJobs.Clear();
-            Debug.Log("SyncManager disposed");
         }
     }
 }

@@ -8,13 +8,11 @@ namespace _Project.System.DS.Utils
         public static string KeyFor<T>(params object[] args)
         {
             var typeName = typeof(T).Name;
-            var parts = new List<string>(){typeName};
+            var parts = new List<string> { typeName };
 
             foreach (var arg in args)
-            {
                 if (arg != null)
                     parts.Add(arg.ToString());
-            }
             return string.Join("_", parts).ToLowerInvariant();
         }
     }

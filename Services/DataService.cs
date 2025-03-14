@@ -10,14 +10,17 @@ using UnityEngine;
 
 namespace _Project.System.DS.Services
 {
-    public class DataService: IDisposable {
+    public class DataService : IDisposable
+    {
         private readonly IStorage _cacheStorage;
         private readonly IStorage _localStorage;
         private readonly IStorage _remoteStorage;
         private readonly SyncManager _syncManager;
         private readonly SyncScheduler _syncScheduler;
 
-        public DataService(IStorage cacheStorage, IStorage localStorage, IStorage remoteStorage, SyncManager syncManager, SyncScheduler syncScheduler) {
+        public DataService(IStorage cacheStorage, IStorage localStorage, IStorage remoteStorage,
+            SyncManager syncManager, SyncScheduler syncScheduler)
+        {
             _cacheStorage = cacheStorage;
             _localStorage = localStorage;
             _remoteStorage = remoteStorage;
@@ -25,8 +28,21 @@ namespace _Project.System.DS.Services
             _syncScheduler = syncScheduler;
         }
 
-        public UniTask<Result<T>> SaveAsync<T>(string key, T data, CancellationToken token = default) where T : DataEntity {
-            try {
+        public void Dispose()
+        {
+            // Освобождаем ресурсы
+            _syncScheduler?.Dispose();
+            (_syncManager as IDisposable)?.Dispose();
+            _cacheStorage?.Dispose();
+            _localStorage?.Dispose();
+            _remoteStorage?.Dispose();
+        }
+
+        public UniTask<Result<T>> SaveAsync<T>(string key, T data, CancellationToken token = default)
+            where T : DataEntity
+        {
+            try
+            {
                 data.Version++;
                 data.LastModified = DateTime.UtcNow;
 
@@ -36,7 +52,9 @@ namespace _Project.System.DS.Services
                 _syncManager.AddJobInQueue(SyncTarget.Remote, new SyncJob(key, data));
 
                 return UniTask.FromResult(Result<T>.Success(data));
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 return UniTask.FromResult(Result<T>.Failure($"Save failed: {ex.Message}"));
             }
         }
@@ -46,8 +64,9 @@ namespace _Project.System.DS.Services
             _syncManager.ProcessQueueAsync(target).Forget();
             // _syncScheduler.SyncForced(); //TODO change this func later - upd timers and other logic...
         }
-        
-        public async UniTask<Result<T[]>> LoadAllAsync<T>(string prefix, StorageType source = StorageType.Cache, bool checkNextStorage = true, CancellationToken token = default) where T : DataEntity
+
+        public async UniTask<Result<T[]>> LoadAllAsync<T>(string prefix, StorageType source = StorageType.Cache,
+            bool checkNextStorage = true, CancellationToken token = default) where T : DataEntity
         {
             switch (source)
             {
@@ -73,40 +92,36 @@ namespace _Project.System.DS.Services
                         return resRemote;
                     break;
             }
+
             return Result<T[]>.Failure("Data not found.");
         }
+
         private async UniTask<Result<T[]>> LoadData<T>(string prefix, IStorage source) where T : DataEntity
         {
             var resCache = await source.LoadAllForPrefix<T>(prefix);
             if (resCache.IsSuccess)
             {
-                if(source.GetType() == _cacheStorage.GetType())
+                if (source.GetType() == _cacheStorage.GetType())
                     Debug.Log("_cacheStorage: " + resCache.Data.Length);
-                if(source.GetType() == _localStorage.GetType())
+                if (source.GetType() == _localStorage.GetType())
                     Debug.Log("_localStorage: " + resCache.Data.Length);
                 return resCache;
             }
+
             return Result<T[]>.Failure("Data not found.");
         }
-        
-        public async UniTask<DebugDataSnapshot<T>> GetDebugSnapshotAsync<T>(string key, CancellationToken token = default) 
-            where T : DataEntity 
+
+        public async UniTask<DebugDataSnapshot<T>> GetDebugSnapshotAsync<T>(string key,
+            CancellationToken token = default)
+            where T : DataEntity
         {
-            var snapshot = new DebugDataSnapshot<T> {
-                CacheData = await LoadAllAsync<T>(key, StorageType.Cache,false, token),
-                LocalData = await LoadAllAsync<T>(key, StorageType.Local,false, token),
-                RemoteData = await LoadAllAsync<T>(key, StorageType.Remote,false, token)
+            var snapshot = new DebugDataSnapshot<T>
+            {
+                CacheData = await LoadAllAsync<T>(key, StorageType.Cache, false, token),
+                LocalData = await LoadAllAsync<T>(key, StorageType.Local, false, token),
+                RemoteData = await LoadAllAsync<T>(key, StorageType.Remote, false, token)
             };
             return snapshot;
-        }
-
-        public void Dispose() {
-            // Освобождаем ресурсы
-            _syncScheduler?.Dispose();
-            (_syncManager as IDisposable)?.Dispose();
-            _cacheStorage?.Dispose();
-            _localStorage?.Dispose();
-            _remoteStorage?.Dispose();
         }
     }
 }

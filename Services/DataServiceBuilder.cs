@@ -13,51 +13,53 @@ using UnityEngine;
 
 namespace _Project.System.DS.Services
 {
-    public class DataServiceBuilder 
+    public class DataServiceBuilder
     {
-        private DSConfig _config;
         private IStorage _cacheStorage;
+        private DSConfig _config;
         private IStorage _localStorage;
         private IStorage _remoteStorage;
 
-        public DataServiceBuilder WithConfig(DSConfig config) 
+        public DataServiceBuilder WithConfig(DSConfig config)
         {
             _config = config;
             return this;
         }
+
         public DataServiceBuilder ChangeTypesStorages<TCache, TLocal, TRemote>()
             where TCache : IStorage where TLocal : IStorage where TRemote : IStorage
         {
-            if(typeof(TCache) == typeof(MemoryCacheStorage))
+            if (typeof(TCache) == typeof(MemoryCacheStorage))
                 _cacheStorage = new MemoryCacheStorage();
-            
-            if(typeof(TLocal) == typeof(JsonStorage))
+
+            if (typeof(TLocal) == typeof(JsonStorage))
                 _localStorage = new JsonStorage(_config.LocalStoragePath);
-            
-            if(typeof(TRemote) == typeof(MockRemoteStorage))
+
+            if (typeof(TRemote) == typeof(MockRemoteStorage))
                 _remoteStorage = new MockRemoteStorage();
-            
-            if(typeof(TRemote) == typeof(RestStorage))
+
+            if (typeof(TRemote) == typeof(RestStorage))
                 _remoteStorage = new RestStorage(_config.RemoteApiUrl, _config.AuthToken);
 
             return this;
         }
-        public DataService Build() 
+
+        public DataService Build()
         {
-            if(_cacheStorage == null) throw new ArgumentNullException(nameof(_localStorage));
-            if(_localStorage == null) throw new ArgumentNullException(nameof(_localStorage));
-            if(_remoteStorage == null) throw new ArgumentNullException(nameof(_localStorage));
+            if (_cacheStorage == null) throw new ArgumentNullException(nameof(_localStorage));
+            if (_localStorage == null) throw new ArgumentNullException(nameof(_localStorage));
+            if (_remoteStorage == null) throw new ArgumentNullException(nameof(_localStorage));
 
             // 4. Создаем стратегии синхронизации
             var localStrategy = new LocalSync(_localStorage);
             var remoteStrategy = new RemoteSync(_remoteStorage);
-            
+
             var strategies = new List<ISyncStrategy> { localStrategy, remoteStrategy };
             Debug.Log("strategies count: " + strategies.Count);
 
             // 5. Создаем менеджер синхронизации
             var syncManager = new SyncManager(strategies.ToArray());
-            var syncScheduler = new SyncScheduler(syncManager, new SyncSettings 
+            var syncScheduler = new SyncScheduler(syncManager, new SyncSettings
             {
                 LocalInterval = _config.LocalSyncInterval,
                 RemoteInterval = _config.RemoteSyncInterval

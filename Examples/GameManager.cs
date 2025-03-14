@@ -10,21 +10,26 @@ using UnityEngine;
 
 namespace _Project.System.DS.Examples
 {
-    public class GameManager : MonoBehaviour 
+    public class GameManager : MonoBehaviour
     {
+        public DataMonitorUI dataMonitorUI;
         private DataService _ds;
         private PlayerData _player;
-        public DataMonitorUI dataMonitorUI;
-        
-        
-        private DataService InitDS() 
+
+        private void OnDestroy()
         {
-            var config = new DSConfig 
+            (_ds as IDisposable)?.Dispose();
+        }
+
+
+        private DataService InitDS()
+        {
+            var config = new DSConfig
             {
                 LocalSyncInterval = TimeSpan.FromSeconds(5),
                 RemoteSyncInterval = TimeSpan.FromSeconds(5),
                 LocalStoragePath = Path.Combine(
-                    Application.dataPath, 
+                    Application.dataPath,
                     "_Game", "_Saves"
                 )
             };
@@ -34,21 +39,23 @@ namespace _Project.System.DS.Examples
                 .Build();
             return dataService;
         }
-        public void Init() 
+
+        public void Init()
         {
             _ds = InitDS();
             dataMonitorUI.Init(_ds);
             LoadPlayerData();
         }
-        private async UniTask LoadPlayerData() 
+
+        private async UniTask LoadPlayerData()
         {
             var loadResult = await _ds.LoadAllAsync<PlayerData>(KeyNamingRules.KeyFor<PlayerData>());
-            
-            if (loadResult.IsSuccess) 
+
+            if (loadResult.IsSuccess)
             {
                 Debug.Log("данные загружены");
                 _player = loadResult.Data[0];
-            } 
+            }
             else
             {
                 Debug.Log("данные не загружены. Создаем нового игрока");
@@ -59,23 +66,20 @@ namespace _Project.System.DS.Examples
                     level = 1
                 };
                 await SavePlayerData();
-            }    
+            }
         }
-        public async UniTask SavePlayerData() 
+
+        public async UniTask SavePlayerData()
         {
             var saveResult = await _ds.SaveAsync(KeyNamingRules.KeyFor<PlayerData>(), _player);
-            if (!saveResult.IsSuccess) 
+            if (!saveResult.IsSuccess)
                 Debug.LogError($"Failed to save player data: {saveResult.ErrorMessage}");
         }
-        public void UpgradePlayerData() 
+
+        public void UpgradePlayerData()
         {
             _player.level++;
             _ = SavePlayerData();
-        }
-        
-        void OnDestroy() 
-        {
-            (_ds as IDisposable)?.Dispose();
         }
     }
 }

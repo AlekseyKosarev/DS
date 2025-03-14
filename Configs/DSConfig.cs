@@ -4,7 +4,8 @@ using UnityEngine;
 
 namespace _Project.System.DS.Configs
 {
-    public class DSConfig {
+    public class DSConfig
+    {
         // Настройки кэша
         // public TimeSpan CacheTTL { get; set; } = TimeSpan.FromMinutes(10);
         // public int CacheMaxSize { get; set; } = 1000;
@@ -13,6 +14,7 @@ namespace _Project.System.DS.Configs
         public string LocalStoragePath { get; set; } = Path.Combine(
             Application.persistentDataPath, "GameData"
         );
+
         public bool UseBinaryFormat { get; set; } = false;
 
         // Удаленное хранилище

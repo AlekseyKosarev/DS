@@ -7,12 +7,13 @@ using UnityEngine;
 
 namespace _Project.System.DS.Core.Sync
 {
-    public class SyncScheduler: IDisposable
+    public class SyncScheduler : IDisposable
     {
         private readonly CancellationTokenSource _cts = new();
-        private readonly SyncManager _syncManager;
         private readonly SyncSettings _settings;
-        public SyncScheduler(SyncManager syncManager, SyncSettings settings) 
+        private readonly SyncManager _syncManager;
+
+        public SyncScheduler(SyncManager syncManager, SyncSettings settings)
         {
             _syncManager = syncManager;
             _settings = settings;
@@ -20,33 +21,38 @@ namespace _Project.System.DS.Core.Sync
             StartRemoteSync();
         }
 
+        public void Dispose()
+        {
+            _cts.Cancel();
+            _cts.Dispose();
+        }
+
         private void StartLocalSync()
         {
-            UniTask.Create(async () => {
+            UniTask.Create(async () =>
+            {
                 while (!_cts.IsCancellationRequested)
                 {
                     await UniTask.Delay(_settings.LocalInterval, cancellationToken: _cts.Token);
                     var result = await _syncManager.ProcessQueueAsync(SyncTarget.Local, _cts.Token);
-                    if(!result.IsSuccess)
+                    if (!result.IsSuccess)
                         Debug.LogError(result.ErrorMessage);
                 }
             }).Forget();
         }
+
         private void StartRemoteSync()
         {
-            UniTask.Create(async () => {
-                while (!_cts.IsCancellationRequested) 
+            UniTask.Create(async () =>
+            {
+                while (!_cts.IsCancellationRequested)
                 {
                     await UniTask.Delay(_settings.RemoteInterval, cancellationToken: _cts.Token);
                     var result = await _syncManager.ProcessQueueAsync(SyncTarget.Remote, _cts.Token);
-                    if(!result.IsSuccess)
+                    if (!result.IsSuccess)
                         Debug.LogError(result.ErrorMessage);
                 }
             }).Forget();
-        }
-        public void Dispose() {
-            _cts.Cancel();
-            _cts.Dispose();
         }
     }
 }
