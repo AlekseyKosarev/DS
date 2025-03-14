@@ -2,16 +2,16 @@
 
 using System;
 using System.Collections.Generic;
-using _Project.System.DS.Configs;
-using _Project.System.DS.Core.Interfaces;
-using _Project.System.DS.Core.Storage;
-using _Project.System.DS.Core.Storage.Cache;
-using _Project.System.DS.Core.Sync;
-using _Project.System.DS.Core.Sync.Strategies;
-using _Project.System.DS.Models;
+using DS.Configs;
+using DS.Core.Interfaces;
+using DS.Core.Storage;
+using DS.Core.Storage.Cache;
+using DS.Core.Sync;
+using DS.Core.Sync.Strategies;
+using DS.Models;
 using UnityEngine;
 
-namespace _Project.System.DS.Services
+namespace DS.Services
 {
     public class DataServiceBuilder
     {

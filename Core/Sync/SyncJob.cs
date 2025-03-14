@@ -1,7 +1,7 @@
 using System;
-using _Project.System.DS.Models;
+using DS.Models;
 
-namespace _Project.System.DS.Core.Sync
+namespace DS.Core.Sync
 {
     public class SyncJob
     {

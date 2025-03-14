@@ -1,9 +1,9 @@
 using System;
 using System.Threading;
-using _Project.System.DS.Models;
 using Cysharp.Threading.Tasks;
+using DS.Models;
 
-namespace _Project.System.DS.Core.Interfaces
+namespace DS.Core.Interfaces
 {
     public interface IStorage : IDisposable
     {

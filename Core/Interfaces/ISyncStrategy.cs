@@ -1,9 +1,9 @@
-using _Project.System.DS.Core.Enums;
-using _Project.System.DS.Core.Sync;
-using _Project.System.DS.Models;
 using Cysharp.Threading.Tasks;
+using DS.Core.Enums;
+using DS.Core.Sync;
+using DS.Models;
 
-namespace _Project.System.DS.Core.Interfaces
+namespace DS.Core.Interfaces
 {
     public interface ISyncStrategy
     {

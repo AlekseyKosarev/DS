@@ -1,14 +1,14 @@
 using System;
 using System.Threading;
-using _Project.System.DS.Core.Enums;
-using _Project.System.DS.Core.Interfaces;
-using _Project.System.DS.Core.Sync;
-using _Project.System.DS.Examples;
-using _Project.System.DS.Models;
 using Cysharp.Threading.Tasks;
+using DS.Core.Enums;
+using DS.Core.Interfaces;
+using DS.Core.Sync;
+using DS.Examples.Data;
+using DS.Models;
 using UnityEngine;
 
-namespace _Project.System.DS.Services
+namespace DS.Services
 {
     public class DataService : IDisposable
     {

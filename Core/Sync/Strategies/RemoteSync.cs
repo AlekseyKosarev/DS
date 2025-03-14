@@ -1,10 +1,10 @@
 using System;
-using _Project.System.DS.Core.Enums;
-using _Project.System.DS.Core.Interfaces;
-using _Project.System.DS.Models;
 using Cysharp.Threading.Tasks;
+using DS.Core.Enums;
+using DS.Core.Interfaces;
+using DS.Models;
 
-namespace _Project.System.DS.Core.Sync.Strategies
+namespace DS.Core.Sync.Strategies
 {
     public class RemoteSync : BaseSyncStrategy
     {

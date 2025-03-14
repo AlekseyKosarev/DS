@@ -1,4 +1,4 @@
-namespace _Project.System.DS.Models
+namespace DS.Models
 {
     public class Result
     {

@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using _Project.System.DS.Core.Interfaces;
-using _Project.System.DS.Models;
 using Cysharp.Threading.Tasks;
+using DS.Core.Interfaces;
+using DS.Models;
 using Newtonsoft.Json;
-using NUnit.Framework;
 
-namespace _Project.System.DS.Core.Storage
+namespace DS.Core.Storage
 {
     public class JsonStorage : IStorage
     {

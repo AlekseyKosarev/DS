@@ -1,6 +1,6 @@
-using _Project.System.DS.Models;
+using DS.Models;
 
-namespace _Project.System.DS.Examples
+namespace DS.Examples.Data
 {
     public class DebugDataSnapshot<T> where T : DataEntity
     {

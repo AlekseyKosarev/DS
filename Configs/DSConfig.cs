@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using UnityEngine;
 
-namespace _Project.System.DS.Configs
+namespace DS.Configs
 {
     public class DSConfig
     {

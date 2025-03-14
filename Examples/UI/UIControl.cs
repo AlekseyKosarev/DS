@@ -1,7 +1,7 @@
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace _Project.System.DS.Examples
+namespace DS.Examples.UI
 {
     public class UIControl : MonoBehaviour
     {

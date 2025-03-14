@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace _Project.System.DS.Utils
+namespace DS.Utils
 {
     public static class KeyNamingRules
     {

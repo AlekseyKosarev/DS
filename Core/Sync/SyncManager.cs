@@ -2,13 +2,13 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
-using _Project.System.DS.Core.Enums;
-using _Project.System.DS.Core.Interfaces;
-using _Project.System.DS.Models;
 using Cysharp.Threading.Tasks;
+using DS.Core.Enums;
+using DS.Core.Interfaces;
+using DS.Models;
 using UnityEngine;
 
-namespace _Project.System.DS.Core.Sync
+namespace DS.Core.Sync
 {
     public class SyncManager : IDisposable
     {

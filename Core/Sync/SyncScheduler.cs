@@ -1,11 +1,11 @@
 using System;
 using System.Threading;
-using _Project.System.DS.Core.Enums;
-using _Project.System.DS.Models;
 using Cysharp.Threading.Tasks;
+using DS.Core.Enums;
+using DS.Models;
 using UnityEngine;
 
-namespace _Project.System.DS.Core.Sync
+namespace DS.Core.Sync
 {
     public class SyncScheduler : IDisposable
     {

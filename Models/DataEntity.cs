@@ -1,6 +1,6 @@
 using System;
 
-namespace _Project.System.DS.Models
+namespace DS.Models
 {
     public abstract class DataEntity
     {

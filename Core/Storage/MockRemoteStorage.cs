@@ -1,11 +1,10 @@
-using System;
 using System.Threading;
-using _Project.System.DS.Core.Interfaces;
-using _Project.System.DS.Models;
 using Cysharp.Threading.Tasks;
+using DS.Core.Interfaces;
+using DS.Models;
 using NotImplementedException = System.NotImplementedException;
 
-namespace _Project.System.DS.Core.Storage
+namespace DS.Core.Storage
 {
     public class MockRemoteStorage : IStorage
     {

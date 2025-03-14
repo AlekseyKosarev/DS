@@ -1,14 +1,16 @@
 using System;
 using System.IO;
-using _Project.System.DS.Configs;
-using _Project.System.DS.Core.Storage;
-using _Project.System.DS.Core.Storage.Cache;
-using _Project.System.DS.Services;
-using _Project.System.DS.Utils;
 using Cysharp.Threading.Tasks;
+using DS.Configs;
+using DS.Core.Storage;
+using DS.Core.Storage.Cache;
+using DS.Examples.Data;
+using DS.Examples.UI;
+using DS.Services;
+using DS.Utils;
 using UnityEngine;
 
-namespace _Project.System.DS.Examples
+namespace DS.Examples
 {
     public class GameManager : MonoBehaviour
     {
@@ -62,7 +64,7 @@ namespace _Project.System.DS.Examples
                 _player = new PlayerData
                 {
                     id = 1,
-                    playerName = "NewPlayer",
+                    name = "NewPlayer",
                     level = 1
                 };
                 await SavePlayerData();

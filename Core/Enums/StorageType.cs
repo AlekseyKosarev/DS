@@ -1,4 +1,4 @@
-namespace _Project.System.DS.Core.Enums
+namespace DS.Core.Enums
 {
     public enum StorageType
     {

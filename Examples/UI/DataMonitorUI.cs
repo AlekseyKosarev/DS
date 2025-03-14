@@ -1,13 +1,14 @@
 using System.Collections;
 using System.Linq;
 using System.Threading;
-using _Project.System.DS.Services;
-using _Project.System.DS.Utils;
 using Cysharp.Threading.Tasks;
+using DS.Examples.Data;
+using DS.Services;
+using DS.Utils;
 using TMPro;
 using UnityEngine;
 
-namespace _Project.System.DS.Examples
+namespace DS.Examples.UI
 {
     public class DataMonitorUI : MonoBehaviour
     {
