@@ -1,29 +1,28 @@
 using System;
-using System.ComponentModel.Design;
-using System.Linq;
 using System.Threading;
+using _Project.System.DS.Core.Enums;
+using _Project.System.DS.Core.Interfaces;
+using _Project.System.DS.Core.Sync;
+using _Project.System.DS.Examples;
+using _Project.System.DS.Models;
 using Cysharp.Threading.Tasks;
-using DS.Core.Enums;
-using DS.Core.Interfaces;
-using DS.Core.Sync;
-using DS.Core.Utils;
-using DS.Models;
-using Unity.VisualScripting;
 using UnityEngine;
 
-namespace DS.Services
+namespace _Project.System.DS.Services
 {
     public class DataService: IDisposable {
-        private readonly ICacheStorage _cacheStorage;
+        private readonly IStorage _cacheStorage;
+        private readonly IStorage _localStorage;
+        private readonly IStorage _remoteStorage;
         private readonly SyncManager _syncManager;
-        private readonly ILocalStorage _localStorage;
-        private readonly IRemoteStorage _remoteStorage;
+        private readonly SyncScheduler _syncScheduler;
 
-        public DataService(ICacheStorage cacheStorage, SyncManager syncManager, ILocalStorage localStorage, IRemoteStorage remoteStorage) {
+        public DataService(IStorage cacheStorage, IStorage localStorage, IStorage remoteStorage, SyncManager syncManager, SyncScheduler syncScheduler) {
             _cacheStorage = cacheStorage;
-            _syncManager = syncManager;
             _localStorage = localStorage;
             _remoteStorage = remoteStorage;
+            _syncManager = syncManager;
+            _syncScheduler = syncScheduler;
         }
 
         public UniTask<Result<T>> SaveAsync<T>(string key, T data, CancellationToken token = default) where T : DataEntity {
@@ -31,10 +30,10 @@ namespace DS.Services
                 data.Version++;
                 data.LastModified = DateTime.UtcNow;
 
-                _cacheStorage.Set(key, data);
+                _cacheStorage.Save(key, data, token);
 
-                _syncManager.Queue(SyncTarget.Local, new SyncJob(key, data));
-                _syncManager.Queue(SyncTarget.Remote, new SyncJob(key, data));
+                _syncManager.AddJobInQueue(SyncTarget.Local, new SyncJob(key, data));
+                _syncManager.AddJobInQueue(SyncTarget.Remote, new SyncJob(key, data));
 
                 return UniTask.FromResult(Result<T>.Success(data));
             } catch (Exception ex) {
@@ -42,63 +41,50 @@ namespace DS.Services
             }
         }
 
-        public async UniTask<Result<T>> LoadAsync<T>(string key, CancellationToken token = default) where T : DataEntity {
-            try {
-                var cached = _cacheStorage.Get<T>(key);
-                if (cached != null) return Result<T>.Success(cached);
-
-                // Загрузка из локального хранилища
-                var local = await _localStorage.LoadAsync<T>(key, token);
-                if (local.IsSuccess) {
-                    _cacheStorage.Set(key, local.Data);
-                    return local;
-                }
-
-                // Загрузка из удаленного хранилища
-                var remote = await _remoteStorage.DownloadAsync<T>(key, token);
-                if (remote.IsSuccess) {
-                    _cacheStorage.Set(key, remote.Data);
-                    _syncManager.Queue(SyncTarget.Local, new SyncJob(key, remote.Data));
-                    return remote;
-                }
-
-                return Result<T>.Failure("Data not found.");
-            } catch (Exception ex) {
-                return Result<T>.Failure($"Load failed: {ex.Message}");
-            }
-        }
-        public async UniTask<Result<T[]>> LoadAllAsync<T>(string prefix, StorageEnum source = StorageEnum.Auto, bool checkNextStorage = true, CancellationToken token = default) where T : DataEntity
+        public void SyncForced(SyncTarget target)
         {
-            string[] keys;
-            if (source == StorageEnum.Auto)
-                source = StorageEnum.Cache;
-            
+            _syncManager.ProcessQueueAsync(target).Forget();
+            // _syncScheduler.SyncForced(); //TODO change this func later - upd timers and other logic...
+        }
+        
+        public async UniTask<Result<T[]>> LoadAllAsync<T>(string prefix, StorageType source = StorageType.Cache, bool checkNextStorage = true, CancellationToken token = default) where T : DataEntity
+        {
             switch (source)
             {
-                case StorageEnum.Cache:
-                    keys = _cacheStorage.GetCacheKeys(prefix);
-                    var resCache = _cacheStorage.GetAll<T>(keys);
+                case StorageType.Cache:
+                    var resCache = await LoadData<T>(prefix, _cacheStorage);
                     if (resCache.IsSuccess)
                         return resCache;
                     if (checkNextStorage)
-                        goto case StorageEnum.Local;
+                        goto case StorageType.Local;
                     break;
 
-                case StorageEnum.Local:
-                    keys = await _localStorage.GetLocalKeysAsync(prefix, token);
-                    var resLocal =  await _localStorage.LoadAllAsync<T>(keys.ToArray(), token);
+                case StorageType.Local:
+                    var resLocal = await LoadData<T>(prefix, _localStorage);
                     if (resLocal.IsSuccess)
                         return resLocal;
                     if (checkNextStorage)
-                        goto case StorageEnum.Remote;
+                        goto case StorageType.Remote;
                     break;
 
-                case StorageEnum.Remote:
-                    keys = await _remoteStorage.GetRemoteKeysAsync(prefix, token);
-                    var resRemote = await _remoteStorage.DownloadAllAsync<T>(keys, token);
+                case StorageType.Remote:
+                    var resRemote = await LoadData<T>(prefix, _remoteStorage);
                     if (resRemote.IsSuccess)
                         return resRemote;
                     break;
+            }
+            return Result<T[]>.Failure("Data not found.");
+        }
+        private async UniTask<Result<T[]>> LoadData<T>(string prefix, IStorage source) where T : DataEntity
+        {
+            var resCache = await source.LoadAllForPrefix<T>(prefix);
+            if (resCache.IsSuccess)
+            {
+                if(source.GetType() == _cacheStorage.GetType())
+                    Debug.Log("_cacheStorage: " + resCache.Data.Length);
+                if(source.GetType() == _localStorage.GetType())
+                    Debug.Log("_localStorage: " + resCache.Data.Length);
+                return resCache;
             }
             return Result<T[]>.Failure("Data not found.");
         }
@@ -107,27 +93,18 @@ namespace DS.Services
             where T : DataEntity 
         {
             var snapshot = new DebugDataSnapshot<T> {
-                CacheData = await LoadAllAsync<T>(key, StorageEnum.Cache,false, token),
-                LocalData = await LoadAllAsync<T>(key, StorageEnum.Local,false, token),
-                RemoteData = await LoadAllAsync<T>(key, StorageEnum.Remote,false, token)
+                CacheData = await LoadAllAsync<T>(key, StorageType.Cache,false, token),
+                LocalData = await LoadAllAsync<T>(key, StorageType.Local,false, token),
+                RemoteData = await LoadAllAsync<T>(key, StorageType.Remote,false, token)
             };
             return snapshot;
-        }
-        public void ClearCache(string key) {
-            _cacheStorage.Remove(key);
-        }
-        public void ClearCache() {
-            _cacheStorage.Clear();
-        }
-        public void DeleteLocalData(string key) {
-            _localStorage.DeleteAsync(key);
-            _cacheStorage.Remove(key);
         }
 
         public void Dispose() {
             // Освобождаем ресурсы
-            _cacheStorage?.Dispose();
+            _syncScheduler?.Dispose();
             (_syncManager as IDisposable)?.Dispose();
+            _cacheStorage?.Dispose();
             _localStorage?.Dispose();
             _remoteStorage?.Dispose();
         }

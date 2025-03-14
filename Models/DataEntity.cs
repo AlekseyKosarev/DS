@@ -1,6 +1,6 @@
 using System;
 
-namespace DS.Models
+namespace _Project.System.DS.Models
 {
     public abstract class DataEntity {
         public int Version { get; set; } = 1;

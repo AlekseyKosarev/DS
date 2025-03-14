@@ -1,13 +1,12 @@
-using System.Threading;
+using _Project.System.DS.Core.Enums;
+using _Project.System.DS.Core.Sync;
+using _Project.System.DS.Models;
 using Cysharp.Threading.Tasks;
-using DS.Core.Enums;
-using DS.Core.Sync;
-using DS.Models;
 
-namespace DS.Core.Interfaces
+namespace _Project.System.DS.Core.Interfaces
 {
     public interface ISyncStrategy {
-        UniTask<Result> ExecuteAsync(SyncJob job);
+        UniTask<Result> SyncIt(SyncJob job);
         bool Handles(SyncTarget target); // Добавлено объявление метода
     }
 }

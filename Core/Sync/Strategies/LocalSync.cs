@@ -1,34 +1,40 @@
 using System;
-using System.Threading;
+using _Project.System.DS.Core.Enums;
+using _Project.System.DS.Core.Interfaces;
+using _Project.System.DS.Models;
 using Cysharp.Threading.Tasks;
-using DS.Core.Enums;
-using DS.Core.Interfaces;
-using DS.Models;
 
-namespace DS.Core.Sync.Strategies
+namespace _Project.System.DS.Core.Sync.Strategies
 {
-    public class LocalSync : BaseSyncStrategy {
-        private readonly ILocalStorage _localStorage;
-
-        public LocalSync(ILocalStorage localStorage) {
+    public class LocalSync : BaseSyncStrategy 
+    {
+        private readonly IStorage _localStorage;
+        public LocalSync(IStorage localStorage) 
+        {
             _localStorage = localStorage;
         }
-
         public override bool Handles(SyncTarget target) => target == SyncTarget.Local;
-
-        public override async UniTask<Result> ExecuteAsync(SyncJob job) {
-            try {
-                var currentData = await _localStorage.LoadAsync<DataEntity>(job.Key);
-                if (IsJobOutdated(job, currentData.Data)) {
-                    return Result.Success(); // Данные уже актуальны
-                }
+        public override async UniTask<Result> SyncIt(SyncJob job)
+        {
+            try
+            {
+                if (_localStorage == null) throw new Exception("RemoteStorage is null");
+                if (job == null) throw new Exception("Key is null"); 
                 
-                // Данные устарели
-                var saveResult = await _localStorage.SaveAsync(job.Key, job.Data);
-                return saveResult;
-            } catch (Exception ex) {
+                var currentData = await _localStorage.Load<DataEntity>(job.Key);
+                var canBeSync = CanBeSync(job, currentData.Data);
+                if (canBeSync.IsSuccess) 
+                {
+                    var saveResult = await _localStorage.Save(job.Key, job.Data);
+                    return saveResult;
+                }
+                return canBeSync;
+            }
+            catch (Exception ex) 
+            {
                 return Result.Failure($"LocalSync failed: {ex.Message}");
             }
+            
         }
     }
 }

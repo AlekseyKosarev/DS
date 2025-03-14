@@ -1,48 +1,26 @@
 using System;
 using System.IO;
-using System.Threading.Tasks;
-using DS.Configs;
-using DS.Core.Sync;
-using DS.Core.Utils;
-using DS.Services;
+using _Project.System.DS.Configs;
+using _Project.System.DS.Core.Storage;
+using _Project.System.DS.Core.Storage.Cache;
+using _Project.System.DS.Services;
+using _Project.System.DS.Utils;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace DS.Examples
+namespace _Project.System.DS.Examples
 {
-    public class GameManager : MonoBehaviour {
-        private DataService _dataService;
+    public class GameManager : MonoBehaviour 
+    {
+        private DataService _ds;
         private PlayerData _player;
-        private SyncScheduler _syncScheduler;
         public DataMonitorUI dataMonitorUI;
-
-
-        public void InitClick()
+        
+        
+        private DataService InitDS() 
         {
-            _ = Init();
-        }
-
-        public void SaveClick()
-        {
-            _ = SavePlayerData();
-        }
-        public async Task Init() {
-            _dataService = InitDS();
-            dataMonitorUI.Init(_dataService);
-            // Загрузка данных с обработкой результата
-            var loadResult = await _dataService.LoadAllAsync<PlayerData>("playerdata");
-            if (loadResult.IsSuccess) {
-                Debug.Log("данные загружены");
-                _player = loadResult.Data[0];
-            } else {
-                Debug.Log("данные не загружены");
-                _player = new PlayerData { playerName = "NewPlayer", level = 1, health = 100 };
-                await SavePlayerData();
-            }
-        }
-
-        DataService InitDS() 
-        {
-            var config = new DSConfig {
+            var config = new DSConfig 
+            {
                 LocalSyncInterval = TimeSpan.FromSeconds(5),
                 RemoteSyncInterval = TimeSpan.FromSeconds(5),
                 LocalStoragePath = Path.Combine(
@@ -50,28 +28,54 @@ namespace DS.Examples
                     "_Game", "_Saves"
                 )
             };
-            var builder = new DataServiceBuilder()
-                .WithConfig(config);
-            var dataService = builder.Build();
-            _syncScheduler = builder.GetScheduler();
+            var dataService = new DataServiceBuilder()
+                .WithConfig(config)
+                .ChangeTypesStorages<MemoryCacheStorage, JsonStorage, MockRemoteStorage>()
+                .Build();
             return dataService;
         }
-
-        public async Task SavePlayerData() {
-            var saveResult = await _dataService.SaveAsync(KeyNamingRules.PlayerData("1"), _player);
-            if (!saveResult.IsSuccess) {
-                Debug.LogError($"Failed to save player data: {saveResult.ErrorMessage}");
-            }
+        public void Init() 
+        {
+            _ds = InitDS();
+            dataMonitorUI.Init(_ds);
+            LoadPlayerData();
         }
-
-        public void UpgradeLevel() {
+        private async UniTask LoadPlayerData() 
+        {
+            var loadResult = await _ds.LoadAllAsync<PlayerData>(KeyNamingRules.KeyFor<PlayerData>());
+            
+            if (loadResult.IsSuccess) 
+            {
+                Debug.Log("данные загружены");
+                _player = loadResult.Data[0];
+            } 
+            else
+            {
+                Debug.Log("данные не загружены. Создаем нового игрока");
+                _player = new PlayerData
+                {
+                    id = 1,
+                    playerName = "NewPlayer",
+                    level = 1
+                };
+                await SavePlayerData();
+            }    
+        }
+        public async UniTask SavePlayerData() 
+        {
+            var saveResult = await _ds.SaveAsync(KeyNamingRules.KeyFor<PlayerData>(), _player);
+            if (!saveResult.IsSuccess) 
+                Debug.LogError($"Failed to save player data: {saveResult.ErrorMessage}");
+        }
+        public void UpgradePlayerData() 
+        {
             _player.level++;
             _ = SavePlayerData();
         }
-
-        void OnDestroy() {
-            _syncScheduler?.Dispose();
-            (_dataService as IDisposable)?.Dispose();
+        
+        void OnDestroy() 
+        {
+            (_ds as IDisposable)?.Dispose();
         }
     }
 }

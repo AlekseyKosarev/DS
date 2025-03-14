@@ -1,16 +1,16 @@
-using DS.Models;
+using _Project.System.DS.Models;
 
-namespace DS.Examples
+namespace _Project.System.DS.Examples
 {
     [global::System.Serializable]
     public class PlayerData: DataEntity
     {
+        public int id;
         public string playerName;
         public int level;
-        public float health;
         
         public override string ToDebugString() {
-            return $"{base.ToDebugString()}, Name: {playerName}, Level: {level}, Health: {health}";
+            return $"{base.ToDebugString()},ID: {id}, Name: {playerName}, Level: {level}";
         }
     }
 }

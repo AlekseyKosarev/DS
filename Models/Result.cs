@@ -1,4 +1,4 @@
-namespace DS.Models
+namespace _Project.System.DS.Models
 {
     public class Result {
         public bool IsSuccess { get; }

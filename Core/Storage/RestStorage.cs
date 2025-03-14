@@ -1,18 +1,17 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
+using _Project.System.DS.Core.Interfaces;
+using _Project.System.DS.Models;
 using Cysharp.Threading.Tasks;
-using DS.Core.Interfaces;
-using DS.Models;
 using Newtonsoft.Json;
 using UnityEngine;
 
 namespace _Project.System.DS.Core.Storage
 {
-    public class RestStorage : IRemoteStorage {
+    public class RestStorage : IStorage {
         private readonly HttpClient _httpClient;
 
         public RestStorage(string apiUrl, string authToken) {
@@ -21,7 +20,7 @@ namespace _Project.System.DS.Core.Storage
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
         }
 
-        public async UniTask<Result> UploadAsync(string key, object data, CancellationToken token = default) {
+        public async UniTask<Result> Save(string key, DataEntity data, CancellationToken token = default) {
             try {
                 var json = JsonConvert.SerializeObject(data);
                 var content = new StringContent(json, global::System.Text.Encoding.UTF8, "application/json");
@@ -33,7 +32,7 @@ namespace _Project.System.DS.Core.Storage
             }
         }
 
-        public async UniTask<Result<T>> DownloadAsync<T>(string key, CancellationToken token = default) where T : DataEntity {
+        public async UniTask<Result<T>> Load<T>(string key, CancellationToken token = default) where T : DataEntity {
             try {
                 var response = await _httpClient.GetAsync($"load/{key}", token);
                 response.EnsureSuccessStatusCode();
@@ -45,17 +44,17 @@ namespace _Project.System.DS.Core.Storage
             }
         }
 
-        public async UniTask<Result<T[]>> DownloadAllAsync<T>(string[] keys, CancellationToken token = default) where T : DataEntity
+        public async UniTask<Result<T[]>> LoadAllForPrefix<T>(string prefix, CancellationToken token = default) where T : DataEntity
         {
             try
             {
+                var keys = GetKeysForPrefix(prefix, token).GetAwaiter().GetResult();
                 if (keys == null || keys.Length == 0)
                 {
                     return Result<T[]>.Failure("DownloadAll - keys array is null or empty.");
                 }
 
-                // Создаем задачи для параллельной загрузки
-                var tasks = keys.Select(key => DownloadAsync<T>(key, token));
+                var tasks = keys.Select(key => Load<T>(key, token));
                 var results = await UniTask.WhenAll(tasks);
 
                 // Фильтруем успешные результаты
@@ -72,7 +71,17 @@ namespace _Project.System.DS.Core.Storage
             }
         }
 
-        public async UniTask<string[]> GetRemoteKeysAsync(string prefix = null, CancellationToken token = default)
+        public UniTask<string[]> GetKeysForPrefix(string prefix = null, CancellationToken token = default)
+        {
+            return UniTask.FromResult(Array.Empty<string>());
+        }
+
+        public UniTask<Result> Delete(string key, CancellationToken token = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public UniTask<Result> DeleteAllForPrefix(string prefix, CancellationToken token = default)
         {
             throw new NotImplementedException();
         }

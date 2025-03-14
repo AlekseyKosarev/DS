@@ -2,16 +2,16 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
+using _Project.System.DS.Core.Enums;
+using _Project.System.DS.Core.Interfaces;
+using _Project.System.DS.Models;
 using Cysharp.Threading.Tasks;
-using DS.Core.Enums;
-using DS.Core.Interfaces;
 using UnityEngine;
 
-namespace DS.Core.Sync
+namespace _Project.System.DS.Core.Sync
 {
     public class SyncManager : IDisposable
     {
-        // Используем ConcurrentDictionary для хранения задач
         private readonly ConcurrentDictionary<(SyncTarget Target, string Key), SyncJob> _pendingJobs = new();
         private readonly ISyncStrategy[] _strategies;
         private readonly CancellationTokenSource _cts = new();
@@ -20,69 +20,52 @@ namespace DS.Core.Sync
         {
             _strategies = strategies;
         }
-
-        /// <summary>
-        /// Добавление задачи в очередь
-        /// </summary>
-        public void Queue(SyncTarget target, SyncJob job)
+        public void AddJobInQueue(SyncTarget target, SyncJob job)
         {
             // Сохраняем только последнюю задачу для каждого ключа
             _pendingJobs.AddOrUpdate(
                 (target, job.Key),
                 job,
-                (key, oldJob) => job // Заменяем старую задачу новой
+                (key, oldJob) => job
             );
         }
-
-        /// <summary>
-        /// Обработка очереди задач
-        /// </summary>
-        internal async UniTask ProcessQueueAsync(SyncTarget target, CancellationToken token = default)
+        internal async UniTask<Result> ProcessQueueAsync(SyncTarget target, CancellationToken token = default)
         {
             var strategy = _strategies.FirstOrDefault(s => s.Handles(target));
-            if (strategy == null) return;
+            if (strategy == null) return Result.Failure("Sync strategy not found");
 
             try
             {
-                // Получаем все задачи для целевого хранилища
                 var jobsToProcess = _pendingJobs
                     .Where(kvp => kvp.Key.Target == target)
                     .ToList();
 
-                // Очищаем очередь для текущего целевого хранилища
                 foreach (var (key, _) in jobsToProcess)
                 {
                     _pendingJobs.TryRemove(key, out _);
                 }
 
-                // Обрабатываем все задачи пакетно
                 foreach (var (_, job) in jobsToProcess)
                 {
-                    var result = await strategy.ExecuteAsync(job);
+                    var result = await strategy.SyncIt(job);
 
                     if (!result.IsSuccess)
                     {
-                        Debug.LogError($"Sync failed for target {target}: {result.ErrorMessage}");
-                    }
-                    else
-                    {
-                        Debug.Log($"Sync succeeded for target {target}.");
+                        return Result.Failure($"Sync failed for target {target}: {result.ErrorMessage}");
                     }
                 }
             }
             catch (OperationCanceledException)
             {
-                Debug.Log($"Processing for target {target} canceled.");
+                return Result.Failure($"Processing for target {target} canceled.");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Unexpected error in sync process: {ex.Message}");
+                return Result.Failure($"Unexpected error in sync process: {ex.Message}");
             }
-        }
 
-        /// <summary>
-        /// Освобождение ресурсов
-        /// </summary>
+            return Result.Success();
+        }
         public void Dispose()
         {
             _cts.Cancel();

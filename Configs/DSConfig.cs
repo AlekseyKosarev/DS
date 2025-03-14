@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using UnityEngine;
 
-namespace DS.Configs
+namespace _Project.System.DS.Configs
 {
     public class DSConfig {
         // Настройки кэша
