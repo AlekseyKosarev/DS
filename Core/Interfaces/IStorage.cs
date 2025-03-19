@@ -15,6 +15,7 @@ namespace DS.Core.Interfaces
 
         UniTask<Result<T[]>> LoadAll<T>(string[] keys, CancellationToken token = default)
             where T : DataEntity;
+
         UniTask<Result<T[]>> LoadAllForPrefix<T>(string prefix, CancellationToken token = default)
             where T : DataEntity;
 

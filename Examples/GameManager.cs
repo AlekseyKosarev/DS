@@ -5,7 +5,6 @@ using DS.Configs;
 using DS.Core.Storage;
 using DS.Core.Storage.Cache;
 using DS.Examples.Data;
-using DS.Examples.UI;
 using DS.Services;
 using DS.Utils;
 using UnityEngine;
@@ -14,13 +13,17 @@ namespace DS.Examples
 {
     public class GameManager : MonoBehaviour
     {
-        public DataMonitorUI dataMonitorUI;
-        private DataService _ds;
         private PlayerData _player;
+        public DataService Ds;
+
+        private void Start()
+        {
+            Init();
+        }
 
         private void OnDestroy()
         {
-            (_ds as IDisposable)?.Dispose();
+            (Ds as IDisposable)?.Dispose();
         }
 
 
@@ -44,14 +47,13 @@ namespace DS.Examples
 
         public void Init()
         {
-            _ds = InitDS();
-            dataMonitorUI.Init(_ds);
+            Ds = InitDS();
             LoadPlayerData().Forget();
         }
 
         private async UniTask LoadPlayerData()
         {
-            var loadResult = await _ds.LoadAllAsync<PlayerData>(KeyNamingRules.KeyFor<PlayerData>());
+            var loadResult = await Ds.LoadAllAsync<PlayerData>(KeyNamingRules.KeyFor<PlayerData>());
 
             if (loadResult.IsSuccess)
             {
@@ -73,7 +75,7 @@ namespace DS.Examples
 
         public async UniTask SavePlayerData()
         {
-            var saveResult = await _ds.SaveAsync(KeyNamingRules.KeyFor<PlayerData>(), _player);
+            var saveResult = await Ds.SaveAsync(KeyNamingRules.KeyFor<PlayerData>(), _player);
             if (!saveResult.IsSuccess)
                 Debug.LogError($"Failed to save player data: {saveResult.ErrorMessage}");
         }

@@ -65,7 +65,8 @@ namespace DS.Services
             // _syncScheduler.SyncForced(); //TODO change this func later - upd timers and other logic...
         }
 
-        public async UniTask<Result<T[]>> LoadAllAsync<T>(string prefix, StorageType source = StorageType.Cache, bool autoSave = true,
+        public async UniTask<Result<T[]>> LoadAllAsync<T>(string prefix, StorageType source = StorageType.Cache,
+            bool autoSave = true,
             bool checkNextStorage = true, CancellationToken token = default) where T : DataEntity
         {
             switch (source)
@@ -96,7 +97,8 @@ namespace DS.Services
             return Result<T[]>.Failure("Data not found.");
         }
 
-        private async UniTask<Result<T[]>> LoadData<T>(string prefix, IStorage source, bool autoSave = true, CancellationToken token = default) where T : DataEntity
+        private async UniTask<Result<T[]>> LoadData<T>(string prefix, IStorage source, bool autoSave = true,
+            CancellationToken token = default) where T : DataEntity
         {
             var keys = await source.GetKeysForPrefix(prefix, token);
             var result = await source.LoadAll<T>(keys, token);
@@ -109,6 +111,7 @@ namespace DS.Services
                         _cacheStorage.SaveAll(keys, result.Data);
                         Debug.Log("_localStorage: " + result.Data.Length);
                     }
+
                     if (source.GetType() == _remoteStorage.GetType())
                     {
                         _cacheStorage.SaveAll(keys, result.Data);
@@ -116,7 +119,7 @@ namespace DS.Services
                         Debug.Log("_remoteStorage: " + result.Data.Length);
                     }
                 }
-                
+
                 return result;
             }
 
@@ -130,8 +133,8 @@ namespace DS.Services
             var snapshot = new DebugDataSnapshot<T>
             {
                 CacheData = await LoadAllAsync<T>(key, StorageType.Cache, false, false, token),
-                LocalData = await LoadAllAsync<T>(key, StorageType.Local, false, false,token),
-                RemoteData = await LoadAllAsync<T>(key, StorageType.Remote, false, false,token)
+                LocalData = await LoadAllAsync<T>(key, StorageType.Local, false, false, token),
+                RemoteData = await LoadAllAsync<T>(key, StorageType.Remote, false, false, token)
             };
             return snapshot;
         }

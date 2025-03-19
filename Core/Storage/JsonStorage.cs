@@ -38,11 +38,8 @@ namespace DS.Core.Storage
         public async UniTask<Result[]> SaveAll(string[] keys, DataEntity[] data, CancellationToken token = default)
         {
             var tasks = new List<UniTask<Result>>();
-            for(var i = 0; i < keys.Length; i++)
-            {
-                tasks.Add(Save(keys[i], data[i], token));
-            }
-            
+            for (var i = 0; i < keys.Length; i++) tasks.Add(Save(keys[i], data[i], token));
+
             return await UniTask.WhenAll(tasks);
         }
 
@@ -63,7 +60,8 @@ namespace DS.Core.Storage
             }
         }
 
-        public async UniTask<Result<T[]>> LoadAll<T>(string[] keys, CancellationToken token = default) where T : DataEntity
+        public async UniTask<Result<T[]>> LoadAll<T>(string[] keys, CancellationToken token = default)
+            where T : DataEntity
         {
             try
             {
@@ -77,14 +75,13 @@ namespace DS.Core.Storage
                     .Where(result => result.IsSuccess)
                     .Select(result => result.Data)
                     .ToArray();
-            
+
                 return Result<T[]>.Success(successfulResults);
             }
             catch (Exception ex)
             {
                 return Result<T[]>.Failure($"LoadAll failed: {ex.Message}");
             }
-            
         }
 
         public async UniTask<Result<T[]>> LoadAllForPrefix<T>(string prefix, CancellationToken token = default)
@@ -93,7 +90,7 @@ namespace DS.Core.Storage
             try
             {
                 var keys = await GetKeysForPrefix(prefix, token);
-                return await LoadAll<T>(keys, token); 
+                return await LoadAll<T>(keys, token);
             }
             catch (Exception ex)
             {

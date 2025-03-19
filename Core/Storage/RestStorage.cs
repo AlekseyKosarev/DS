@@ -43,11 +43,8 @@ namespace DS.Core.Storage
         public async UniTask<Result[]> SaveAll(string[] keys, DataEntity[] data, CancellationToken token = default)
         {
             var tasks = new List<UniTask<Result>>();
-            for(var i = 0; i < keys.Length; i++)
-            {
-                tasks.Add(Save(keys[i], data[i], token));
-            }
-            
+            for (var i = 0; i < keys.Length; i++) tasks.Add(Save(keys[i], data[i], token));
+
             return await UniTask.WhenAll(tasks);
         }
 
@@ -67,7 +64,8 @@ namespace DS.Core.Storage
             }
         }
 
-        public async UniTask<Result<T[]>> LoadAll<T>(string[] keys, CancellationToken token = default) where T : DataEntity
+        public async UniTask<Result<T[]>> LoadAll<T>(string[] keys, CancellationToken token = default)
+            where T : DataEntity
         {
             try
             {
@@ -89,7 +87,6 @@ namespace DS.Core.Storage
             {
                 return Result<T[]>.Failure($"DownloadAll failed: {ex.Message}");
             }
-            
         }
 
         public async UniTask<Result<T[]>> LoadAllForPrefix<T>(string prefix, CancellationToken token = default)

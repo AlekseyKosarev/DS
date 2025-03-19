@@ -15,7 +15,7 @@ namespace DS.Core.Storage
 
         public UniTask<Result[]> SaveAll(string[] keys, DataEntity[] data, CancellationToken token = default)
         {
-            return UniTask.FromResult(new Result[]{Result.Failure("MockRemoteStorage can't save data.")});
+            return UniTask.FromResult(new[] { Result.Failure("MockRemoteStorage can't save data.") });
         }
 
         public UniTask<Result<T>> Load<T>(string key, CancellationToken token = default) where T : DataEntity
@@ -25,7 +25,7 @@ namespace DS.Core.Storage
 
         public UniTask<Result<T[]>> LoadAll<T>(string[] keys, CancellationToken token = default) where T : DataEntity
         {
-            return UniTask.FromResult<Result<T[]>>(Result<T[]>.Failure("Data not found."));
+            return UniTask.FromResult(Result<T[]>.Failure("Data not found."));
         }
 
         public UniTask<Result<T[]>> LoadAllForPrefix<T>(string prefix, CancellationToken token = default)
