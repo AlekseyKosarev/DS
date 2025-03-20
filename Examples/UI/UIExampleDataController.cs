@@ -4,7 +4,7 @@ using DS.Examples.Data;
 using DS.Utils;
 using UnityEngine;
 
-public class UILevelsController : MonoBehaviour
+public class UIExampleDataController : MonoBehaviour
 {
     public GameManager gameManager;
     public GameObject Content;
@@ -12,10 +12,10 @@ public class UILevelsController : MonoBehaviour
 
     private readonly List<GameObject> _levelButtons = new();
 
-    private void CreateLevelButton(LevelData levelData)
+    private void CreateLevelButton(DataExampleDS dataExampleDS)
     {
         var button = Instantiate(LevelButtonPrefab, Content.transform);
-        button.GetComponent<UILevelButton>().Init(levelData);
+        button.GetComponent<UIExampleData>().Init(dataExampleDS);
         _levelButtons.Add(button);
     }
 
@@ -28,7 +28,7 @@ public class UILevelsController : MonoBehaviour
     {
         _levelButtons.ForEach(b => Destroy(b));
         _levelButtons.Clear();
-        var result = await gameManager.Ds.LoadAllAsync<LevelData>(KeyNamingRules.KeyFor<LevelData>(level));
+        var result = await gameManager.Ds.LoadAllAsync<DataExampleDS>(KeyNamingRules.KeyFor<DataExampleDS>(level));
 
         if (result.IsSuccess)
         {
@@ -37,11 +37,11 @@ public class UILevelsController : MonoBehaviour
         else
         {
             Debug.Log(result.ErrorMessage);
-            var levelData = new LevelData();
+            var levelData = new DataExampleDS();
             levelData.id = 0;
             levelData.name = "Level example";
             levelData.grade = 1;
-            gameManager.Ds.SaveAsync(KeyNamingRules.KeyFor<LevelData>("example"), levelData);
+            gameManager.Ds.SaveAsync(KeyNamingRules.KeyFor<DataExampleDS>("example"), levelData);
         }
     }
 }

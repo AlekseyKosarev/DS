@@ -2,18 +2,18 @@ using DS.Examples.Data;
 using TMPro;
 using UnityEngine;
 
-public class UILevelButton : MonoBehaviour
+public class UIExampleData : MonoBehaviour
 {
     public TextMeshProUGUI text;
     public TextMeshProUGUI gradeText;
 
-    public void Init(LevelData levelData)
+    public void Init(DataExampleDS dataExampleDS)
     {
-        text.text = levelData.name;
+        text.text = dataExampleDS.name;
 
         var strGrade = "\u2666";
         var finalGrade = "";
-        for (var i = 0; i < levelData.grade; i++) finalGrade += strGrade;
+        for (var i = 0; i < dataExampleDS.grade; i++) finalGrade += strGrade;
         gradeText.text = finalGrade;
     }
 }

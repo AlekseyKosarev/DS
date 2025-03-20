@@ -4,15 +4,16 @@ using DS.Models;
 namespace DS.Examples.Data
 {
     [Serializable]
-    public class PlayerData : DataEntity
+    public class DataExampleDS : DataEntity
     {
-        public int id;
         public string name;
-        public int level;
+        public int id;
+
+        public int grade;
 
         public override string ToDebugString()
         {
-            return $"{base.ToDebugString()},ID: {id}, Name: {name}, Level: {level}";
+            return $"{base.ToDebugString()},ID: {id}, Name: {name}";
         }
     }
 }

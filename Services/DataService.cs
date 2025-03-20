@@ -125,18 +125,5 @@ namespace DS.Services
 
             return Result<T[]>.Failure("Data not found.");
         }
-
-        public async UniTask<DebugDataSnapshot<T>> GetDebugSnapshotAsync<T>(string key,
-            CancellationToken token = default)
-            where T : DataEntity
-        {
-            var snapshot = new DebugDataSnapshot<T>
-            {
-                CacheData = await LoadAllAsync<T>(key, StorageType.Cache, false, false, token),
-                LocalData = await LoadAllAsync<T>(key, StorageType.Local, false, false, token),
-                RemoteData = await LoadAllAsync<T>(key, StorageType.Remote, false, false, token)
-            };
-            return snapshot;
-        }
     }
 }
