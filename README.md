@@ -1,6 +1,6 @@
-Service for Data Management (Save System)
+Service for Data Management (**Save System**)
 
-Roadmap:
+**Roadmap:**
 - test in project
   
 - cleans code(and maybe example)
@@ -18,11 +18,13 @@ Roadmap:
     - Синхронизацию тоже придется изменять для поддержки списка хранилищ
 
 
-Requirements:
-- UniTask: link
-- Newtonsoft json: link
+**Requirements:**
+- UniTask: https://github.com/Cysharp/UniTask.git
+  - add with unity package manager, by git: https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask
+- Newtonsoft json: https://github.com/applejag/Newtonsoft.Json-for-Unity.git
+  - add with unity package manager, by name: ```com.unity.nuget.newtonsoft-json```
 
-Features:
+**Features:**
 - Flexibility:
   - anymore data types(any serializable) - but need inherit from DataEntity!
   - custom realisations for Storages (LocalStorage > JsonStorage(simple files) | SecureJsonStorage | SQLstorage(use BD and etc))
@@ -43,7 +45,7 @@ Features:
   - check time updates
   - data validations
 
-Features in example:
+**Features in example:**
 - remote storage use empty realization
 - there is a load all data with type - usages LoadAll<TypeData>(KeyFor<TypeData>())
 - UI for show loaded data
