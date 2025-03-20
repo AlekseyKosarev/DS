@@ -51,7 +51,7 @@ namespace DS.Services
                 _syncManager.AddJobInQueue(SyncTarget.Local, new SyncJob(key, data));
                 _syncManager.AddJobInQueue(SyncTarget.Remote, new SyncJob(key, data));
 
-                return UniTask.FromResult(Result<T>.Success(data));
+                return UniTask.FromResult(Result<T>.Success(data));//TODO переделать на waitFoAll
             }
             catch (Exception ex)
             {
@@ -108,13 +108,13 @@ namespace DS.Services
                 {
                     if (source.GetType() == _localStorage.GetType())
                     {
-                        _cacheStorage.SaveAll(keys, result.Data);
+                        _cacheStorage.SaveAll(keys, result.Data, token).Forget();
                         Debug.Log("_localStorage: " + result.Data.Length);
                     }
 
                     if (source.GetType() == _remoteStorage.GetType())
                     {
-                        _cacheStorage.SaveAll(keys, result.Data);
+                        _cacheStorage.SaveAll(keys, result.Data, token).Forget();
                         _syncManager.AddJobsInQueue(SyncTarget.Local, keys, result.Data);
                         Debug.Log("_remoteStorage: " + result.Data.Length);
                     }
