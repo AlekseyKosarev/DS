@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using DS.Examples;
 using DS.Examples.Data;
 using DS.Utils;
@@ -41,7 +42,7 @@ public class UIExampleDataController : MonoBehaviour
             levelData.id = 0;
             levelData.name = "Level example";
             levelData.grade = 1;
-            gameManager.Ds.SaveAsync(KeyNamingRules.KeyFor<DataExampleDS>("example"), levelData);
+            gameManager.Ds.SaveAsync(KeyNamingRules.KeyFor<DataExampleDS>("example"), levelData).Forget();
         }
     }
 }
