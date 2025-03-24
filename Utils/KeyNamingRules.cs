@@ -12,7 +12,8 @@ namespace DS.Utils
 
             foreach (var arg in args)
                 if (arg != null)
-                    parts.Add(arg.ToString());
+                    if(int.TryParse(arg.ToString(), out var argInt) && argInt > 0)
+                        parts.Add(arg.ToString());
             return string.Join("_", parts).ToLowerInvariant();
         }
     }
