@@ -64,7 +64,19 @@ namespace DS.Services
             _syncManager.ProcessQueueAsync(target).Forget();
             // _syncScheduler.SyncForced(); //TODO change this func later - upd timers and other logic...
         }
-
+        
+        public async UniTask<Result<T>> LoadAsync<T>(string key, StorageType source = StorageType.Cache,
+            bool autoSave = true,
+            bool checkNextStorage = true, CancellationToken token = default) where T : DataEntity
+        {
+            var data = await LoadAllAsync<T>(key, source, autoSave, checkNextStorage, token);
+            if (data.IsSuccess)
+            {
+                return Result<T>.Success(data.Data[0]);
+            }
+            return Result<T>.Failure(data.ErrorMessage);
+        }
+        
         public async UniTask<Result<T[]>> LoadAllAsync<T>(string prefix, StorageType source = StorageType.Cache,
             bool autoSave = true,
             bool checkNextStorage = true, CancellationToken token = default) where T : DataEntity
