@@ -38,20 +38,36 @@ namespace DS.Services
             _remoteStorage?.Dispose();
         }
 
-        public UniTask<Result<T>> SaveAsync<T>(string key, T data, CancellationToken token = default)
+        public UniTask<Result<T>> SaveAsync<T>(string key, T data, StorageType source = StorageType.Cache,
+            bool checkNextSource = true, bool changeVersion = true, CancellationToken token = default)
             where T : DataEntity
         {
             try
             {
-                data.Version++;
-                data.LastModified = DateTime.UtcNow;
+                if (changeVersion)
+                {
+                    data.Version++;
+                    data.LastModified = DateTime.UtcNow;
+                }
 
-                _cacheStorage.Save(key, data, token);
+                switch (source)
+                {
+                    case StorageType.Cache:
+                        _cacheStorage.Save(key, data, token);
+                        if (checkNextSource)
+                            goto case StorageType.Local;
+                        break;
+                    case StorageType.Local:
+                        _syncManager.AddJobInQueue(SyncTarget.Local, new SyncJob(key, data));
+                        if (checkNextSource)
+                            goto case StorageType.Remote;
+                        break;
+                    case StorageType.Remote:
+                        _syncManager.AddJobInQueue(SyncTarget.Remote, new SyncJob(key, data));
+                        break;
+                }
 
-                _syncManager.AddJobInQueue(SyncTarget.Local, new SyncJob(key, data));
-                _syncManager.AddJobInQueue(SyncTarget.Remote, new SyncJob(key, data));
-
-                return UniTask.FromResult(Result<T>.Success(data));//TODO переделать на waitFoAll
+                return UniTask.FromResult(Result<T>.Success(data)); //TODO переделать на waitFoAll
             }
             catch (Exception ex)
             {
@@ -64,7 +80,7 @@ namespace DS.Services
             _syncManager.ProcessQueueAsync(target).Forget();
             // _syncScheduler.SyncForced(); //TODO change this func later - upd timers and other logic...
         }
-        
+
         public async UniTask<Result<T>> LoadAsync<T>(string key, StorageType source = StorageType.Cache,
             bool autoSave = true,
             bool checkNextStorage = true, CancellationToken token = default) where T : DataEntity
@@ -74,12 +90,13 @@ namespace DS.Services
             {
                 return Result<T>.Success(data.Data[0]);
             }
+
             return Result<T>.Failure(data.ErrorMessage);
         }
-        
+
         public async UniTask<Result<T[]>> LoadAllAsync<T>(string prefix, StorageType source = StorageType.Cache,
             bool autoSave = true,
-            bool checkNextStorage = true, CancellationToken token = default) where T : DataEntity
+            bool checkNextSource = true, CancellationToken token = default) where T : DataEntity
         {
             switch (source)
             {
@@ -87,7 +104,7 @@ namespace DS.Services
                     var resCache = await LoadData<T>(prefix, _cacheStorage, autoSave, token);
                     if (resCache.IsSuccess)
                         return resCache;
-                    if (checkNextStorage)
+                    if (checkNextSource)
                         goto case StorageType.Local;
                     break;
 
@@ -95,7 +112,7 @@ namespace DS.Services
                     var resLocal = await LoadData<T>(prefix, _localStorage, autoSave, token);
                     if (resLocal.IsSuccess)
                         return resLocal;
-                    if (checkNextStorage)
+                    if (checkNextSource)
                         goto case StorageType.Remote;
                     break;
 
